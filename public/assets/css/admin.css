@@ -1,0 +1,246 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    min-height: 100vh;
+    background: #f4f4f4;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    background: #343a40;
+    color: #e9ecef;
+    display: flex;
+    flex-direction: column;
+    padding: 25px 15px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 24px;
+    color: #ffffff;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar nav {
+    flex-grow: 1;
+}
+
+.sidebar a {
+    padding: 15px 20px;
+    margin: 6px 0;
+    text-decoration: none;
+    color: #ced4da;
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+    transition: background 0.3s ease, color 0.3s ease;
+    font-size: 16px;
+}
+
+.sidebar a i {
+    margin-right: 15px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.sidebar a span {
+    flex-grow: 1;
+}
+
+.sidebar a:hover, .sidebar a.active {
+    background: #495057;
+    color: #ffffff;
+}
+
+/* Main Content */
+.main-content {
+    flex-grow: 1;
+    padding: 30px;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+}
+
+header.main-header {
+    background: #ffffff;
+    padding: 15px 30px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+}
+
+header.main-header h1 {
+    font-size: 26px;
+    color: #343a40;
+}
+
+.content-box {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.07);
+    flex-grow: 1;
+    border: 1px solid #e9ecef;
+    position: relative;
+}
+
+.content-box h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #495057;
+    padding-top: 10px;
+}
+
+.content-box p {
+    text-align: center;
+    color: #6c757d;
+    margin-bottom: 30px;
+}
+
+/* Dashboard Cards */
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    color: #ffffff;
+    border: none;
+    text-align: center;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.12);
+}
+
+.card i {
+    font-size: 40px;
+    margin-bottom: 15px;
+    opacity: 0.9;
+}
+
+.card p {
+    font-size: 18px;
+    font-weight: 500;
+    color: #ffffff;
+    margin: 0;
+}
+
+/* Different Card Colors */
+.card.approve-reject {
+    background: linear-gradient(135deg, #56ccf2, #2f80ed);
+}
+
+.card.manage-history {
+    background: linear-gradient(135deg, #f2994a, #f2c94c);
+}
+
+/* Table Styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background: #fff;
+    font-size: 14px;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Buttons inside table */
+td button {
+    padding: 5px 10px;
+    margin-right: 5px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+td button:first-of-type {
+    background-color: #28a745;
+    color: white;
+}
+
+td button:first-of-type:hover {
+    background-color: #218838;
+}
+
+td button:last-of-type {
+    background-color: #dc3545;
+    color: white;
+}
+
+td button:last-of-type:hover {
+    background-color: #c82333;
+}
+
+/* View Details Button in history */
+.manage-history td button:last-of-type {
+    background-color: #007bff;
+}
+
+.manage-history td button:last-of-type:hover {
+    background-color: #0056b3;
+}
+
+/* Close Button ('x') Styling */
+.close-content {
+    position: absolute;
+    top: 150px;
+    right: 350px;
+    background: transparent;
+    border: none;
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+    padding: 40px;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.close-content:hover {
+    color: #666;
+}

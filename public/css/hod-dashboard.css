@@ -1,0 +1,130 @@
+/* Base layout */
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f0f4f8;
+    margin: 0;
+    padding: 0;
+}
+
+.dashboard-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background-color: #1e3a8a;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.sidebar-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #3b82f6;
+    padding-bottom: 10px;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 0;
+    display: block;
+    transition: background 0.3s;
+}
+
+.nav-links a:hover {
+    background-color: #3b82f6;
+    border-radius: 4px;
+    padding-left: 10px;
+}
+
+.logout-btn {
+    background-color: #dc2626;
+    color: white;
+    border: none;
+    padding: 10px;
+    margin-top: 30px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.logout-btn:hover {
+    background-color: #b91c1c;
+}
+
+/* Main content */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-header {
+    background-color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.profile-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-info img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+/* Cards */
+.dashboard-cards {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.card span {
+    display: block;
+    font-size: 30px;
+    margin-top: 10px;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card.total {
+    border-left: 5px solid #3b82f6;
+}
+
+.card.pending {
+    border-left: 5px solid #f59e0b;
+}
+
+.card.approved {
+    border-left: 5px solid #10b981;
+}
+
+.card.rejected {
+    border-left: 5px solid #ef4444;
+}

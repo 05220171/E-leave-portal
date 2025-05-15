@@ -1,0 +1,231 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .dashboard {
+    display: flex;
+  }
+  
+  .sidebar {
+    width: 220px;
+    background: #2c3e50;
+    color: white;
+    padding: 20px;
+    min-height: 100vh;
+  }
+  
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .sidebar ul li a {
+    color: white;
+    text-decoration: none;
+    display: block;
+    padding: 10px;
+    border-radius: 4px;
+    transition: background 0.3s ease;
+  }
+  
+  .sidebar ul li a:hover {
+    background: #34495e;
+  }
+  
+  .main-content {
+    flex-grow: 1;
+    padding: 30px;
+  }
+  
+  
+  
+  .card h3 {
+    margin-bottom: 20px;
+  }
+  
+  .card form label {
+    display: block;
+    margin-top: 15px;
+  }
+  
+  .card form input,
+  .card form select,
+  .card form textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .card form button {
+    margin-top: 20px;
+    background: #3498db;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .card form button:hover {
+    background: #2980b9;
+
+    
+  }
+  .card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    margin-top: 20px;
+}
+
+    /* Styles for the Dashboard Cards */
+
+.dashboard-title {
+    font-size: 1.8rem; /* Adjust size */
+    font-weight: 600;
+    color: #333; /* Dark grey text */
+    margin-bottom: 1.5rem; /* Space below title */
+}
+
+.dashboard-grid {
+    display: grid;
+    /* Creates responsive columns: minimum 280px wide, fill available space */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem; /* Space between cards */
+}
+
+.dashboard-card {
+    background-color: #ffffff; /* White background */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    overflow: hidden; /* Ensures content respects border radius */
+    display: flex; /* Allows footer to stick to bottom */
+    flex-direction: column;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Hover effect */
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px); /* Slight lift on hover */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+
+.card-content {
+    padding: 1.5rem; /* Padding inside the card */
+    flex-grow: 1; /* Allows content to take available space */
+}
+
+.card-title {
+    font-size: 1.25rem; /* Title size */
+    font-weight: 600;
+    color: #2d3748; /* Darker text */
+    margin-bottom: 0.5rem;
+}
+
+.card-description {
+    font-size: 0.95rem;
+    color: #718096; /* Grey text */
+    line-height: 1.5;
+}
+
+.card-action {
+    padding: 1rem 1.5rem; /* Padding for the action button area */
+    background-color: #f7fafc; /* Very light grey background */
+    border-top: 1px solid #e2e8f0; /* Separator line */
+    text-align: right; /* Align button to the right */
+    margin-top: auto; /* Pushes action area to the bottom */
+}
+
+.card-button {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 5px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    color: #ffffff; /* White text */
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+/* Specific button colors (adjust as desired) */
+.button-apply {
+    background-color: #4f46e5; /* Indigo */
+}
+.button-apply:hover {
+    background-color: #4338ca;
+}
+
+.button-history {
+    background-color: #10b981; /* Emerald / Green */
+}
+.button-history:hover {
+    background-color: #059669;
+}
+
+.button-status {
+    background-color: #3b82f6; /* Blue */
+}
+.button-status:hover {
+    background-color: #2563eb;
+}
+
+/* Add more styles as needed */
+/* General Page Title */
+.page-title {
+    font-size: 2rem; /* Larger title */
+    font-weight: 700; /* Bolder */
+    color: #1f2937; /* Darker grey */
+    margin-bottom: 2rem; /* More space below title */
+    border-bottom: 2px solid #e5e7eb; /* Optional separator line */
+    padding-bottom: 0.5rem; /* Space between text and line */
+    max-width: 700px; /* Apply max-width to title too if desired */
+    margin-left: auto; /* Center title */
+    margin-right: auto; /* Center title */
+}
+
+/* Form Container Card */
+.form-card {
+    background-color: #ffffff;
+    padding: 2rem 2.5rem; /* Increased padding */
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Slightly more pronounced shadow */
+    margin-bottom: 2rem;
+
+    /* ---- ADD THESE LINES ---- */
+    max-width: 700px; /* Limit maximum width (adjust pixels as needed) */
+    margin-left: auto;  /* Center the card horizontally */
+    margin-right: auto; /* Center the card horizontally */
+    /* ----------------------- */
+}
+
+/* Form Styles (keep these as they are) */
+.leave-form .form-group {
+    margin-bottom: 1.5rem; /* Increased space between fields */
+}
+
+.leave-form label {
+    display: block;
+    margin-bottom: 0.6rem; /* More space below label */
+    font-weight: 600; /* Bolder labels */
+    font-size: 1.05rem; /* Larger label text */
+    color: #374151; /* Slightly darker label text */
+}
+
+/* Input Fields (Date, Select, Textarea) (keep these) */
+.leave-form input[type="date"],
+.leave-form select,
+.leave-form textarea {
+    width: 100%; /* Inputs still fill the width of the form-card */
+    /* ... other input styles ... */
+}
+
+/* ... keep other styles like focus, file input, button, alerts ... */

@@ -1,0 +1,91 @@
+/* Sidebar container */
+.sidebar {
+    width: 250px;
+    height: 100%;
+    background-color: #2c3e50; /* Dark background for professional look */
+    color: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding-top: 20px;
+    padding-left: 10px;
+    font-family: Arial, sans-serif;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+  }
+  
+  /* Sidebar title */
+  .sidebar-title {
+    font-size: 30px; /* Increased font size */
+    font-weight: bold;
+    color: #ecf0f1;
+    margin-bottom: 30px;
+  }
+  
+  /* Sidebar list styling */
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  /* List item styling */
+  .sidebar li {
+    margin: 20px 0; /* Added more spacing between items */
+  }
+  
+  /* Active link styling */
+  .sidebar .active a {
+    background-color: #3498db; /* Highlight active link with a blue background */
+    border-radius: 5px;
+    padding: 15px; /* Increased padding for better spacing */
+    color: #ecf0f1;
+  }
+  
+  .sidebar a {
+    display: block;
+    text-decoration: none;
+    color: #bdc3c7;
+    font-size: 18px; /* Increased font size */
+    padding: 15px; /* Increased padding */
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .sidebar a:hover {
+    background-color: #34495e; /* Darker shade on hover */
+    color: #ecf0f1; /* Light color on hover */
+  }
+  
+  /* Icon styling */
+  .sidebar i {
+    margin-right: 15px; /* Adjusted space between icon and text */
+    font-size: 20px; /* Increased icon size */
+  }
+  
+  /* Logout button */
+  .sidebar a.logout {
+    background-color: #e74c3c;
+    color: white;
+    margin-top: 30px;
+    font-size: 18px; /* Increased font size for logout */
+  }
+  
+  .sidebar a.logout:hover {
+    background-color: #c0392b;
+  }
+  
+  /* For mobile responsiveness, adjust sidebar width */
+  @media (max-width: 768px) {
+    .sidebar {
+      width: 200px;
+    }
+  
+    .sidebar-title {
+      font-size: 26px; /* Adjusted font size for mobile */
+    }
+  
+    .sidebar a {
+      font-size: 16px; /* Adjusted font size for mobile */
+    }
+  }
+  
