@@ -228,4 +228,25 @@ body {
     /* ... other input styles ... */
 }
 
+/* Custom styles for more prominent table borders */
+.table-bordered th,
+.table-bordered td {
+    border: 1px solid #dee2e6 !important; /* Default Bootstrap border color, !important for override if needed */
+}
+
+.table-bordered thead th {
+    border-bottom-width: 2px !important; /* Make header bottom border slightly thicker */
+}
+
+/* If you want even darker/thicker borders */
+/*
+.table-bordered th,
+.table-bordered td {
+    border: 1px solid #b7b7b7 !important;
+}
+.table-bordered thead th {
+    border-bottom-width: 2px !important;
+    border-bottom-color: #888888 !important;
+}
+*/
 /* ... keep other styles like focus, file input, button, alerts ... */

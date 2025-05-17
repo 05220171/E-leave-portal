@@ -1,9 +1,10 @@
-@extends('layouts.app-no-sidebar') {{-- <<< THIS IS THE CRUCIAL CHANGE --}}
+<!-- File: resources/views/superadmin/create-user.blade.php -->
+@extends('layouts.app-no-sidebar')
 
-@section('title', 'Create New User') {{-- Optional: if your app-no-sidebar layout yields a title --}}
+@section('title', 'Create New User')
 
 @section('content_header')
-    <div class="container-fluid pt-4"> {{-- Adjusted padding since no sidebar might change spacing --}}
+    <div class="container-fluid pt-4">
         <div class="row mb-2">
             <div class="col-sm-6">
                 <h1 class="m-0 text-dark">Create New User</h1>
@@ -13,7 +14,7 @@
 @stop
 
 @section('content')
-<div class="container"> {{-- You might want this container to be container-fluid if it's a full-page form without a sidebar --}}
+<div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10 col-lg-8">
             <div class="card card-primary">
@@ -23,8 +24,7 @@
                 <form method="POST" action="{{ route('superadmin.users.store') }}">
                     @csrf
                     <div class="card-body">
-                        {{-- ... (rest of your form fields are fine) ... --}}
-
+                        {{-- ... (name, email, password, confirm password fields) ... --}}
                         <div class="form-group">
                             <label for="name">Name <span class="text-danger">*</span></label>
                             <input type="text" id="name" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
@@ -67,6 +67,9 @@
                                 <option value="student" {{ old('role') == 'student' ? 'selected' : '' }}>Student</option>
                                 <option value="hod" {{ old('role') == 'hod' ? 'selected' : '' }}>HOD</option>
                                 <option value="dsa" {{ old('role') == 'dsa' ? 'selected' : '' }}>DSA</option>
+                                <!-- ADDED DAA and President -->
+                                <option value="daa" {{ old('role') == 'daa' ? 'selected' : '' }}>DAA</option>
+                                <option value="president" {{ old('role') == 'president' ? 'selected' : '' }}>President</option>
                                 <option value="sso" {{ old('role') == 'sso' ? 'selected' : '' }}>SSO</option>
                                 <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
                                 <option value="superadmin" {{ old('role') == 'superadmin' ? 'selected' : '' }}>Super Admin</option>
@@ -132,10 +135,11 @@
 
 @push('scripts')
 <script>
-    // Your JavaScript to toggle student fields remains the same and is good.
     document.addEventListener('DOMContentLoaded', function () {
         const roleSelect = document.getElementById('role');
         const studentFieldsDiv = document.getElementById('student-fields');
+        // MODIFIED: Also hide student fields if DAA or President is selected, or any non-student role
+        const nonStudentRolesForSpecificFields = ['hod', 'dsa', 'sso', 'admin', 'superadmin', 'daa', 'president'];
 
         function toggleStudentFields() {
             if (roleSelect && studentFieldsDiv) {
@@ -144,12 +148,14 @@
                 } else {
                     studentFieldsDiv.style.display = 'none';
                 }
+                // You might add other role-specific fields here later
+                // e.g., if DAA needs specific fields, show them when roleSelect.value === 'daa'
             }
         }
 
         if (roleSelect) {
             roleSelect.addEventListener('change', toggleStudentFields);
-            toggleStudentFields(); 
+            toggleStudentFields();
         }
     });
 </script>

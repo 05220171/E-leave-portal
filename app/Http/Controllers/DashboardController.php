@@ -49,6 +49,8 @@ class DashboardController extends Controller
         $redirectRouteName = match ($userRole) {
             'hod'        => 'hod.dashboard',
             'dsa'        => 'dsa.dashboard',
+            'daa'        => 'daa.dashboard',        // ADDED
+            'president'  => 'president.dashboard',
             'sso'        => 'sso.dashboard',
             'admin'      => 'admin.home',
             'superadmin' => 'admin.home',

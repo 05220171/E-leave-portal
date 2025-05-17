@@ -10,6 +10,10 @@ use App\Http\Controllers\SSOController;
 use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\ExcelImportController;
 use App\Http\Controllers\DepartmentController; 
+use App\Http\Controllers\DaaController;
+use App\Http\Controllers\PresidentController;
+use App\Http\Controllers\LeaveTypeController;
+use App\Http\Controllers\LeaveWorkflowController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -56,10 +60,22 @@ Route::middleware([
             Route::resource('users', SuperAdminController::class)->except(['show']);
             Route::get('users/import/form', [SuperAdminController::class, 'importForm'])->name('users.importForm');
             Route::post('users/import', [SuperAdminController::class, 'import'])->name('users.import');
+            Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
 
             // ✅ 2. ADD THIS LINE FOR DEPARTMENT ROUTES
             Route::resource('departments', DepartmentController::class);
-
+            Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
+            // --- ADD LEAVE WORKFLOW ROUTES (Nested under leave-types) ---
+            Route::prefix('leave-types/{leaveType}/workflows')->name('leave-types.workflows.')
+                ->group(function () {
+                    Route::get('/', [LeaveWorkflowController::class, 'index'])->name('index');
+                    Route::post('/', [LeaveWorkflowController::class, 'store'])->name('store');
+                    Route::delete('/{workflow}', [LeaveWorkflowController::class, 'destroy'])->name('destroy');
+                    // Optional Edit/Update routes if you implement the edit methods
+                    // Route::get('/{workflow}/edit', [LeaveWorkflowController::class, 'edit'])->name('edit');
+                    // Route::put('/{workflow}', [LeaveWorkflowController::class, 'update'])->name('update');
+            });
+            // --- END LEAVE WORKFLOW ROUTES ---
         });
 
     /*
@@ -111,6 +127,37 @@ Route::middleware([
         Route::post('/approve/{id}', [DsaController::class, 'approve'])->name('approve');
         Route::post('/reject/{id}', [DsaController::class, 'reject'])->name('reject');
     });
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DAA Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['role:daa']) // Uses your CheckUserRole middleware
+         ->prefix('daa')
+         ->name('daa.')
+         ->group(function () {
+        Route::get('/dashboard', [DaaController::class, 'dashboard'])->name('dashboard');
+        // Add other DAA specific routes here later
+        // Example: Route::get('/pending-medical-leaves', [DaaController::class, 'pendingMedical'])->name('pending-medical');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | President Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['role:president']) // Uses your CheckUserRole middleware
+         ->prefix('president')
+         ->name('president.')
+         ->group(function () {
+        Route::get('/dashboard', [PresidentController::class, 'dashboard'])->name('dashboard');
+        // Add other President specific routes here later
+        // Example: Route::get('/approved-medical-leaves', [PresidentController::class, 'approvedMedical'])->name('approved-medical');
+    });
+
 
 
     /*

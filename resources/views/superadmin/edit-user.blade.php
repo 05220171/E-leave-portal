@@ -1,3 +1,4 @@
+<!-- File: resources/views/superadmin/edit-user.blade.php -->
 @extends('layouts.app') {{-- Or 'layouts.app-no-sidebar' if you want that for edit page too --}}
 
 @section('title', 'Edit User - ' . $user->name) {{-- More specific page title --}}
@@ -78,6 +79,9 @@
                                 <option value="student" {{ $currentRole == 'student' ? 'selected' : '' }}>Student</option>
                                 <option value="hod" {{ $currentRole == 'hod' ? 'selected' : '' }}>HOD</option>
                                 <option value="dsa" {{ $currentRole == 'dsa' ? 'selected' : '' }}>DSA</option>
+                                <!-- MODIFIED: Added DAA and President -->
+                                <option value="daa" {{ $currentRole == 'daa' ? 'selected' : '' }}>DAA</option>
+                                <option value="president" {{ $currentRole == 'president' ? 'selected' : '' }}>President</option>
                                 <option value="sso" {{ $currentRole == 'sso' ? 'selected' : '' }}>SSO</option>
                                 <option value="admin" {{ $currentRole == 'admin' ? 'selected' : '' }}>Admin</option>
                                 <option value="superadmin" {{ $currentRole == 'superadmin' ? 'selected' : '' }}>Super Admin</option>
@@ -140,6 +144,10 @@
     document.addEventListener('DOMContentLoaded', function () {
         const roleSelect = document.getElementById('role');
         const studentFieldsDiv = document.getElementById('student-fields');
+        // MODIFIED: Also hide student fields if DAA or President is selected, or any non-student role
+        // (Though the existing logic already correctly handles this as it shows student fields *only* for 'student' role)
+        // No explicit change needed here in the JS if the goal is just to add new roles to the dropdown,
+        // as the condition `roleSelect.value === 'student'` correctly handles showing/hiding.
 
         function toggleStudentFields() {
             if (roleSelect && studentFieldsDiv) {

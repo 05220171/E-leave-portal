@@ -62,6 +62,30 @@
           </div>
         </div>
 
+        <div class="col-md-3 mb-4">
+          <div class="card h-100 shadow-sm text-center position-relative"
+               style="min-height: 160px; /* Consistent reduced height */
+                      background: linear-gradient(45deg, #778899, #2F4F4F); /* LightSlateGray to DarkSlateGray - different duller shade */
+                      color: white;
+                      border-radius: 0.5rem;">
+            <div class="card-body d-flex flex-column justify-content-center align-items-center p-3">
+              <div>
+                <h5 class="card-title fw-bold" style="font-size: 1.5rem;">Manage Leave Types</h5>
+                <p class="card-text mb-2" style="color: rgba(255,255,255,0.80); font-size: 1rem;">Define and configure different types of leave.</p>
+              </div>
+              <a href="{{ route('superadmin.leave-types.index') }}"
+                 class="btn stretched-link mt-2"
+                 style="background-color: rgba(255,255,255,0.1);
+                        border: 1px solid rgba(255,255,255,0.25);
+                        color: white;
+                        padding: 0.3rem 0.6rem;
+                        font-size: 0.85rem;">
+                Configure Leave Types
+              </a>
+            </div>
+          </div>
+        </div>
+
         {{-- Example: Import Users Card --}}
         {{-- <div class="col-md-3 mb-4">
           <div class="card h-100 shadow-sm text-center position-relative" 

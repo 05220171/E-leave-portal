@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Dashboard</title>
   {{-- Load Vite assets FIRST if they include Bootstrap --}}
+  
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 
   {{-- Load custom styles AFTER Bootstrap/main app CSS --}}

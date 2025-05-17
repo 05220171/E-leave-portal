@@ -35,6 +35,10 @@ class LoginResponse implements LoginResponseContract
                 $redirectUrl = route('hod.dashboard');
             } elseif ($user->role === 'dsa') {
                 $redirectUrl = route('dsa.dashboard');
+            } elseif ($user->role === 'daa') {
+                $redirectUrl = route('daa.dashboard');    // ADDED
+            } elseif ($user->role === 'president') {
+                $redirectUrl = route('president.dashboard');
             } elseif ($user->role === 'sso') {
                 $redirectUrl = route('sso.dashboard');
             } elseif ($user->role === 'student') {

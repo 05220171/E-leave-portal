@@ -1,121 +1,155 @@
-@extends('layouts.app') {{-- Use your custom layout file --}}
+@extends('layouts.app') {{-- Your main application layout --}}
 
-@section('content') {{-- Define the content section for @yield('content') --}}
+@section('content')
+<div class="container mt-4"> {{-- Assuming Bootstrap for main content styling --}}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Apply for Leave</h2>
+                </div>
+                <div class="card-body">
+                    {{-- Display Session Success/Error Messages --}}
+                    @if (session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
+                    @if (session('error'))
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ session('error') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
 
-    <h2 class="page-title">Apply for Leave</h2> {{-- Example title class --}}
+                    {{-- Display Validation Errors --}}
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <h5 class="alert-heading">Please correct the errors below:</h5>
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
 
-    {{-- Display Success/Error Messages --}}
-    @if (session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
-    @if (session('error'))
-        <div class="alert alert-danger">
-            {{ session('error') }}
-        </div>
-    @endif
-    {{-- Display Validation Errors --}}
-    @if ($errors->any())
-        <div class="alert alert-danger">
-            <strong>Whoops! Please check the form fields:</strong>
-            <ul class="mt-2" style="list-style-position: inside; padding-left: 1em;">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+                    <form action="{{ route('student.store-leave') }}" method="POST" enctype="multipart/form-data" class="leave-form">
+                        @csrf
 
+                        <div class="mb-3 form-group">
+                            <label for="leave_type_id" class="form-label">Leave Type: <span class="text-danger">*</span></label>
+                            <select name="leave_type_id" id="leave_type_id" required class="form-select @error('leave_type_id') is-invalid @enderror">
+                                <option value="">-- Select Leave Type --</option>
+                                @if(isset($activeLeaveTypes) && $activeLeaveTypes->count() > 0)
+                                    @foreach($activeLeaveTypes as $type)
+                                        <option value="{{ $type->id }}" {{ old('leave_type_id') == $type->id ? 'selected' : '' }}>
+                                            {{ $type->name }}
+                                        </option>
+                                    @endforeach
+                                @else
+                                    <option value="" disabled>No leave types available. Please contact admin.</option>
+                                @endif
+                            </select>
+                            @error('leave_type_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
 
-    {{-- Card container for the form --}}
-    <div class="form-card"> {{-- Use a class from your student.css or create one --}}
-            {{-- Show number of leave days after submission --}}
-        @if (isset($days))
-            <div class="alert alert-info">
-                Number of leave days: <strong>{{ $days }}</strong>
-            </div>
-        @endif   
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 form-group">
+                                    <label for="from_date" class="form-label">Start Date: <span class="text-danger">*</span></label>
+                                    <input type="date" name="from_date" id="from_date" value="{{ old('from_date') }}" required class="form-control @error('from_date') is-invalid @enderror">
+                                    @error('from_date')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 form-group">
+                                    <label for="to_date" class="form-label">End Date: <span class="text-danger">*</span></label>
+                                    <input type="date" name="to_date" id="to_date" value="{{ old('to_date') }}" required class="form-control @error('to_date') is-invalid @enderror">
+                                    @error('to_date')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
 
-        <form action="{{ route('student.store-leave') }}" method="POST" enctype="multipart/form-data" class="leave-form">
-            @csrf {{-- CSRF protection token --}}
+                        <div class="mb-3 form-group">
+                            <label for="leave_days" class="form-label">Number of Working Days:</label>
+                            <input type="text" id="leave_days" name="leave_days" readonly class="form-control bg-light"> {{-- bg-light for readonly appearance --}}
+                        </div>
 
-            {{-- Form Fields --}}
-            <div class="form-group">
-                <label for="leave_type">Leave Type:</label>
-                <select name="leave_type" id="leave_type" required>
-                    <option value="">-- Select Type --</option>
-                    {{-- Add validation in controller for leave_type --}}
-                    <option value="regular" {{ old('leave_type') == 'regular' ? 'selected' : '' }}>Regular</option>
-                    <option value="emergency" {{ old('leave_type') == 'emergency' ? 'selected' : '' }}>Emergency</option>
-                </select>
-            </div>
+                        <div class="mb-3 form-group">
+                            <label for="reason" class="form-label">Reason: <span class="text-danger">*</span></label>
+                            <textarea name="reason" id="reason" rows="4" required class="form-control @error('reason') is-invalid @enderror">{{ old('reason') }}</textarea>
+                            @error('reason')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
 
-             <div class="form-group">
-                <label for="from_date">Start Date:</label>
-                {{-- Controller expects 'from_date' --}}
-                <input type="date" name="from_date" id="from_date" value="{{ old('from_date') }}" required>
-             </div>
+                        <div class="mb-3 form-group">
+                            <label for="document" class="form-label">Attach Document (Optional):</label>
+                            <input type="file" name="document" id="document" class="form-control @error('document') is-invalid @enderror">
+                            <small class="form-text text-muted">Allowed types: PDF, JPG, JPEG, PNG, DOC, DOCX. Max size: 2MB.</small>
+                            @error('document')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
 
-             <div class="form-group">
-                <label for="to_date">End Date:</label>
-                 {{-- Controller expects 'to_date' --}}
-                <input type="date" name="to_date" id="to_date" value="{{ old('to_date') }}" required>
-             </div>
+                        <div class="form-actions mt-4 text-center"> {{-- Your styling class for actions --}}
+                            <button type="submit" class="btn btn-primary px-4">Submit Leave Request</button>
+                            {{-- Or use your custom classes: class="card-button button-apply" --}}
+                        </div>
+                    </form>
+                </div> {{-- card-body --}}
+            </div> {{-- card --}}
+        </div> {{-- col --}}
+    </div> {{-- row --}}
+</div> {{-- container --}}
 
-             <div class="form-group">
-                <label for="leave_days">Number of Leave Days:</label>
-                <input type="text" id="leave_days" name="leave_days" readonly>
-            </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const fromDateInput = document.getElementById('from_date');
+        const toDateInput = document.getElementById('to_date');
+        const leaveDaysOutput = document.getElementById('leave_days');
 
+        function calculateWorkingDays() {
+            const startDateString = fromDateInput.value;
+            const endDateString = toDateInput.value;
 
-             <div class="form-group">
-                <label for="reason">Reason:</label>
-                <textarea name="reason" id="reason" rows="4" required>{{ old('reason') }}</textarea>
-             </div>
+            if (startDateString && endDateString) {
+                const start = new Date(startDateString);
+                const end = new Date(endDateString);
+                let workingDays = 0;
 
-             <div class="form-group">
-                <label for="attachment">Attach Document (Optional):</label>
-                <input type="file" name="attachment" id="attachment">
-                {{-- Note: Controller needs logic to handle this upload --}}
-             </div>
-
-             <div class="form-actions">
-                <button type="submit" class="card-button button-apply">Submit Leave Request</button>
-             </div>
-
-        </form> {{-- End of form --}}
-    </div> {{-- End of form-card --}}
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const fromDate = document.getElementById('from_date');
-            const toDate = document.getElementById('to_date');
-            const leaveDays = document.getElementById('leave_days');
-
-            function calculateDays() {
-                const start = new Date(fromDate.value);
-                const end = new Date(toDate.value);
-                let totalDays = 0;
-
-                if (fromDate.value && toDate.value && end >= start) {
-                    // Loop through the date range and count weekdays
-                    for (let currentDate = start; currentDate <= end; currentDate.setDate(currentDate.getDate() + 1)) {
-                        const dayOfWeek = currentDate.getDay(); // Get the day of the week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
-                        if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Exclude Saturday (6) and Sunday (0)
-                            totalDays++;
+                if (end >= start) {
+                    let currentDate = new Date(start.getTime()); // Use getTime() for reliable date copying for iteration
+                    while (currentDate <= end) {
+                        const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
+                        if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Exclude Sunday and Saturday
+                            workingDays++;
                         }
+                        currentDate.setDate(currentDate.getDate() + 1);
                     }
-                    leaveDays.value = totalDays;
+                    leaveDaysOutput.value = workingDays > 0 ? workingDays : ''; // Show empty if 0 for clarity, or just workingDays
                 } else {
-                    leaveDays.value = '';
+                    leaveDaysOutput.value = ''; // Or an error message, or 0
                 }
+            } else {
+                leaveDaysOutput.value = ''; // Or 0
             }
+        }
 
-            fromDate.addEventListener('change', calculateDays);
-            toDate.addEventListener('change', calculateDays);
-        });
-    </script>
-
-
-
-@endsection {{-- End the content section --}}
+        if (fromDateInput && toDateInput && leaveDaysOutput) {
+            fromDateInput.addEventListener('change', calculateWorkingDays);
+            toDateInput.addEventListener('change', calculateWorkingDays);
+            // Initial calculation if dates might be pre-filled (e.g., from old input on validation error)
+            calculateWorkingDays();
+        }
+    });
+</script>
+@endsection

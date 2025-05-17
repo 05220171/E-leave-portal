@@ -39,7 +39,7 @@ class SuperAdminController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|string|in:admin,student,hod,dsa,sso,superadmin', // Added superadmin
+            'role' => 'required|string|in:admin,student,hod,dsa,sso,superadmin,daa,president', // Added superadmin
             'department_id' => 'required|exists:departments,id',
         ];
 
@@ -67,7 +67,8 @@ class SuperAdminController extends Controller
     public function edit(User $user)
     {
         $departments = Department::all();
-        return view('superadmin.edit-user', compact('user', 'departments'));
+        $roles = ['admin', 'student', 'hod', 'dsa', 'sso', 'superadmin', 'daa', 'president'];
+        return view('superadmin.edit-user', compact('user', 'departments', 'roles'));
     }
 
     public function update(Request $request, User $user)
@@ -75,7 +76,7 @@ class SuperAdminController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|string|in:admin,student,hod,dsa,sso,superadmin', // Added superadmin
+            'role' => 'required|string|in:admin,student,hod,dsa,sso,superadmin,daa,president', // Added superadmin
             'department_id' => 'required|exists:departments,id',
         ];
 

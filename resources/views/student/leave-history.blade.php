@@ -3,83 +3,96 @@
 @extends('layouts.app') {{-- Use the same layout as your apply_leave form --}}
 
 @section('content')
-    <h2 class="page-title">My Leave History</h2>
+<div class="container mt-4"> {{-- Assuming Bootstrap styling --}}
+    <h2 class="page-title mb-4">My Leave History</h2>
 
     {{-- Display Success/Error Messages from cancel/delete actions --}}
     @if (session('success'))
-        <div class="alert alert-success">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
     @if (session('error'))
-        <div class="alert alert-danger">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
     @if ($leaves->isEmpty())
         <div class="alert alert-info">
-            You have not applied for any leave yet.
+            You have not applied for any leave yet. <a href="{{ route('student.apply-leave') }}">Apply for one now?</a>
         </div>
     @else
         <div class="table-responsive">
-            <table class="table table-striped table-bordered">
-                <thead>
+            <table class="table table-striped table-bordered table-hover">
+                <thead class="table-light">
                     <tr>
-                        <th></th>
+                        <th>#</th>
                         <th>Leave Type</th>
                         <th>Start Date</th>
                         <th>End Date</th>
+                        <th>Days</th>
                         <th>Reason</th>
                         <th>Status</th>
                         <th>Applied On</th>
-                        <th>Remarks</th> {{-- ✅ Added Remarks Column --}}
+                        <th>Remarks</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($leaves as $index => $leave)
                         <tr>
-                            <td>{{ $index + 1 }}</td>
-                            <td>{{ ucfirst($leave->leave_type) }}</td>
+                            <td>{{ $leaves->firstItem() + $index }}</td>
+                            <td>
+                                @if ($leave->type)
+                                    {{ $leave->type->name }}
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
                             <td>{{ $leave->start_date->format('d M Y') }}</td>
                             <td>{{ $leave->end_date->format('d M Y') }}</td>
-                            <td>{{ Str::limit($leave->reason, 50) }}</td>
+                            <td>{{ $leave->number_of_days ?? 'N/A' }}</td>
+                            <td>{{ Str::limit($leave->reason, 40) }}</td>
                             <td>
+                                {{-- ✅ USE overall_status HERE --}}
                                 <span class="badge
-                                    @switch($leave->status)
-                                        @case('approved') bg-success @break
-                                        @case('cancelled') bg-secondary @break
-                                        @case(Str::startsWith($leave->status, 'rejected_')) bg-danger @break
-                                        @default bg-warning text-dark @break
-                                    @endswitch">
-                                    {{ Str::replace('_', ' ', Str::title($leave->status)) }}
+                                    @if($leave->overall_status === 'approved') bg-success
+                                    @elseif($leave->overall_status === 'cancelled') bg-secondary
+                                    @elseif(Str::startsWith($leave->overall_status, 'rejected_by_')) bg-danger
+                                    @elseif(Str::startsWith($leave->overall_status, 'awaiting_')) bg-warning text-dark
+                                    @else bg-info text-dark @endif">
+                                    {{ Str::title(str_replace('_', ' ', $leave->overall_status)) }}
                                 </span>
+                                {{-- If status is pending, show who it's pending with --}}
+                                @if(Str::startsWith($leave->overall_status, 'awaiting_') && $leave->current_approver_role)
+                                    <small class="d-block text-muted">Pending: {{ Str::title($leave->current_approver_role) }}</small>
+                                @endif
                             </td>
-                            <td>{{ $leave->created_at->format('d M Y H:i') }}</td>
-                            <td>{{ $leave->remarks ?? 'N/A' }}</td> {{-- ✅ Show remarks --}}
+                            <td>{{ $leave->created_at->format('d M Y, H:i') }}</td>
+                            <td>{{ $leave->final_remarks ?: ($leave->remarks ?: 'N/A') }}</td>
                             <td>
-                                @php
-                                    $cancellableStatuses = ['awaiting_hod_approval', 'awaiting_dsa_approval', 'awaiting_sso_approval'];
-                                    $deletableStatuses = ['cancelled', 'rejected_by_hod', 'rejected_by_dsa', 'rejected_by_sso'];
-                                @endphp
-
-                                @if(in_array($leave->status, $cancellableStatuses))
-                                    <form action="{{ route('student.cancel-leave', $leave->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to cancel this leave request?');">
+                                {{-- ✅ USE overall_status for action logic --}}
+                                @if(Str::startsWith($leave->overall_status, 'awaiting_') && $leave->overall_status !== 'cancelled')
+                                    <form action="{{ route('student.cancel-leave', $leave->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to cancel this leave request?');">
                                         @csrf
-                                        <button type="submit" class="btn btn-sm btn-warning">Cancel</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-warning">Cancel</button>
                                     </form>
                                 @endif
 
-                                @if(in_array($leave->status, $deletableStatuses))
-                                    <form action="{{ route('student.delete-leave', $leave->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this leave record? This cannot be undone.');">
+                                {{-- Only allow deletion of 'cancelled' leaves --}}
+                                @if($leave->overall_status === 'cancelled')
+                                    <form action="{{ route('student.delete-leave', $leave->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to delete this cancelled leave record? This cannot be undone.');">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                     </form>
                                 @endif
 
-                                @if(!in_array($leave->status, $cancellableStatuses) && !in_array($leave->status, $deletableStatuses))
+                                {{-- Show '-' if no actions are available --}}
+                                @if(!(Str::startsWith($leave->overall_status, 'awaiting_') && $leave->overall_status !== 'cancelled') && !($leave->overall_status === 'cancelled'))
                                     -
                                 @endif
                             </td>
@@ -89,8 +102,9 @@
             </table>
         </div>
 
-        <div class="mt-3">
-            {{ $leaves->links() }}
+        <div class="mt-4 d-flex justify-content-center">
+            {{ $leaves->links() }} {{-- Ensure your pagination views are styled for Bootstrap --}}
         </div>
     @endif
+</div>
 @endsection
