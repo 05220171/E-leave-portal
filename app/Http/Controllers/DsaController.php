@@ -151,9 +151,7 @@ class DsaController extends Controller
                 'action_at' => now(),
             ]);
 
-            // 2. Update leave status
             $leave->overall_status = 'rejected_by_dsa';
-            // Store rejection remarks on the main leave record as the final remarks for this rejection.
             $leave->final_remarks = $request->input('remarks');
             $leave->current_approver_role = null; // Workflow stops
             $leave->save();
