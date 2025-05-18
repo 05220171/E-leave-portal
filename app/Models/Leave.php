@@ -33,6 +33,7 @@ class Leave extends Model
         'current_approver_role',  // NEW: Role of the current approver
         'overall_status',         // NEW: e.g., 'awaiting_hod_approval', 'approved', 'rejected_by_dsa', 'cancelled'
         'final_remarks',          // NEW: For overall remarks after workflow completion
+        
     ];
 
     /**
