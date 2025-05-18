@@ -12,13 +12,13 @@
     {{-- Leave History Link --}}
     {{-- Adds 'active' class if the current route's name is 'student.leave-history' --}}
     <li class="{{ request()->routeIs('student.leave-history') ? 'active' : '' }}">
-      <a href="{{ route('student.leave-history') }}">Leave History</a>
+      <a href="{{ route('student.leave-history') }}">Leave status</a>
     </li>
 
     {{-- Leave Status Link --}}
     {{-- Adds 'active' class if the current route's name is 'student.leave-status' --}}
     <li class="{{ request()->routeIs('student.leave-status') ? 'active' : '' }}">
-      <a href="{{ route('student.leave-status') }}">Leave Status</a>
+      <a href="{{ route('student.leave-status') }}">Leave Records</a>
     </li>
 
     {{-- Optional: Logout Link --}}

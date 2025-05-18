@@ -64,6 +64,7 @@ return [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
+        Barryvdh\DomPDF\ServiceProvider::class, // Add this line
 
         // 'users' => [
         //     'driver' => 'database',

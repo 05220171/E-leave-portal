@@ -12,7 +12,8 @@ use Illuminate\View\View;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail; // Make sure this is used
+use Illuminate\Support\Facades\Mail;
+use Barryvdh\DomPDF\Facade\Pdf; // Make sure this is used
 
 // Import your simplified Mailables (that don't handle threading themselves)
 use App\Mail\LeaveRequestSubmittedToStudent;
@@ -142,35 +143,62 @@ class StudentLeaveController extends Controller
         return $workingDays;
     }
 
+    public function status(): View // This method now shows approved leave records
+    {
+        $studentId = Auth::id();
+        $approvedLeaves = Leave::with(['type', 'student.department']) // Eager load for display
+                        ->where('student_id', $studentId)
+                        ->where('overall_status', 'approved') // <<< KEY CHANGE: Only fetch 'approved'
+                        ->orderBy('start_date', 'desc')     // Show most recent approved leaves first
+                        ->paginate(10);                     // Paginate the results
+
+        return view('student.leave-status', compact('approvedLeaves'));
+    }
+
+    /**
+     * Generate and download a PDF leave certificate/record for an APPROVED leave.
+     * (This method remains the same as provided in my previous detailed response for certificate generation)
+     */
+    public function downloadLeaveCertificate(Leave $leave): \Illuminate\Http\Response
+    {
+        if ($leave->student_id !== Auth::id()) {
+            abort(403, 'Unauthorized action. You can only download your own leave records.');
+        }
+        if ($leave->overall_status !== 'approved') {
+            return redirect()->route('student.status') // Redirect to the leave records page
+                             ->with('error', 'A leave certificate can only be downloaded for fully approved leave requests.');
+        }
+        $leave->loadMissing(['student.department', 'type', 'approvalActions.user']);
+        $pdfData = ['leave' => $leave];
+        $studentNameSanitized = Str::slug($leave->student->name ?? 'student', '_');
+        $leaveStartDateSanitized = $leave->start_date->format('Ymd');
+        $filename = "leave_record_{$studentNameSanitized}_{$leave->id}_{$leaveStartDateSanitized}.pdf";
+        try {
+            $pdf = Pdf::loadView('pdf.leave_certificate', $pdfData);
+            return $pdf->download($filename);
+        } catch (\Exception $e) {
+            Log::error("PDF Generation Error for Leave ID {$leave->id}: " . $e->getMessage());
+            return redirect()->route('student.status')
+                             ->with('error', 'Could not generate the leave certificate due to an error. Please try again later.');
+        }
+    }
+
+    
     public function history(): View
     {
-         $leaves = Leave::with('type')
+         $leaves = Leave::with(['type', 'student.department']) // Eager load for display
                         ->where('student_id', Auth::id())
                         ->orderBy('created_at', 'desc')
                         ->paginate(10);
+         // This view will show all leaves: pending, approved, rejected, cancelled
          return view('student.leave-history', compact('leaves'));
     }
 
-    public function status(): View
+    public function cancel(Leave $leave) // Using Route Model Binding
     {
-        $finalizedStatuses = [
-            'approved',
-            'cancelled',
-        ];
-        $activeLeaves = Leave::with('type')
-                             ->where('student_id', Auth::id())
-                             ->where(function ($query) use ($finalizedStatuses) {
-                                 $query->whereNotIn('overall_status', $finalizedStatuses)
-                                       ->whereRaw("NOT overall_status LIKE 'rejected_by_%'");
-                             })
-                             ->orderBy('created_at', 'desc')
-                             ->paginate(10);
-        return view('student.leave-status', compact('activeLeaves'));
-    }
-
-    public function cancel($id)
-    {
-        $leave = Leave::where('id', $id)->where('student_id', Auth::id())->firstOrFail();
+        if ($leave->student_id !== Auth::id()) {
+            abort(403);
+        }
         if (Str::startsWith($leave->overall_status, 'awaiting_') && $leave->overall_status !== 'cancelled') {
              $leave->update([
                 'overall_status' => 'cancelled',
@@ -179,22 +207,22 @@ class StudentLeaveController extends Controller
              ]);
              // TODO: Notify relevant current approver that this was cancelled
              return back()->with('success', 'Leave request has been cancelled.');
-        } else {
-            return back()->with('error', 'This leave request cannot be cancelled at its current stage (' . Str::title(str_replace('_', ' ', $leave->overall_status)) . ').');
         }
+        return back()->with('error', 'This leave request cannot be cancelled at its current stage.');
     }
 
-    public function delete($id)
+    public function delete(Leave $leave) // Using Route Model Binding
     {
-        $leave = Leave::where('id', $id)->where('student_id', Auth::id())->firstOrFail();
+        if ($leave->student_id !== Auth::id()) {
+            abort(403);
+        }
         if ($leave->overall_status === 'cancelled') {
             if ($leave->document && Storage::disk('public')->exists($leave->document)) {
                 Storage::disk('public')->delete($leave->document);
             }
             $leave->delete();
-            return back()->with('success', 'Leave record deleted from history.');
-        } else {
-            return back()->with('error', 'This leave record cannot be deleted at its current stage.');
+            return redirect()->route('student.history')->with('success', 'Cancelled leave record deleted from history.');
         }
+        return redirect()->route('student.history')->with('error', 'This leave record cannot be deleted.');
     }
 }

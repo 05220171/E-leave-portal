@@ -93,7 +93,9 @@ Route::middleware([
         Route::get('/leave-history', [StudentLeaveController::class, 'history'])->name('leave-history');
         Route::delete('/leave/{id}', [StudentLeaveController::class, 'delete'])->name('delete-leave');
         Route::post('/cancel-leave/{id}', [StudentLeaveController::class, 'cancel'])->name('cancel-leave');
-        Route::get('/leave-status', [StudentLeaveController::class, 'status'])->name('leave-status');
+        Route::get('/leave-status', [StudentLeaveController::class, 'status'])->name('leave-status');// NOW shows APPROVED leaves + download
+        // NEW ROUTE FOR DOWNLOADING CERTIFICATE
+        Route::get('/leave-certificate/{leave}/download', [StudentLeaveController::class, 'downloadLeaveCertificate'])->name('leave.download-certificate');
     });
 
     /*

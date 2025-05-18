@@ -8,10 +8,13 @@ A new leave request has been submitted by **{{ $student->name }}** and requires 
 **Student Details:**
 - **Name:** {{ $student->name }}
 - **Department:** {{ $student->department->name ?? 'N/A' }}
-@if($student->program)- **Program:** {{ $student->program }}@endif
-@if($student->class)- **Class:** {{ $student->class }}@endif
+@if($student->program)- **Program:** {{ $student->program }}
+@endif
+@if($student->class)- **Class:** {{ $student->class }}
+@endif
 
 **Leave Details:**
+
 - **Leave Type:** {{ $leave->type->name ?? 'N/A' }}
 - **Start Date:** {{ $leave->start_date->format('D, M j, Y') }}
 - **End Date:** {{ $leave->end_date->format('D, M j, Y') }}

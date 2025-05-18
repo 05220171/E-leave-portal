@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="container mt-4"> {{-- Assuming Bootstrap styling --}}
-    <h2 class="page-title mb-4">My Leave History</h2>
+    <h2 class="page-title mb-4">Applied Leave Status</h2>
 
     {{-- Display Success/Error Messages from cancel/delete actions --}}
     @if (session('success'))
