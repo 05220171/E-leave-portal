@@ -1,75 +1,132 @@
 @extends('layouts.app')
 
+@section('title', 'SSO Dashboard - Leave Records')
+
 @section('content')
-<div class="container mt-5">
-    <h1 class="mb-4 text-center text-primary">SSO Dashboard - Pending Leave Applications</h1>
+<div class="container mt-4">
+    <h1 class="mb-4 text-center">SSO Dashboard</h1>
+    <p class="text-center text-muted mb-4">Approved Leave Applications for Record Keeping</p>
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle"></i> {{ session('success') }}
+            {{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-    @elseif(session('error'))
+    @endif
+    @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    @if(session('info'))
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            {{ session('info') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
-    @if($leaves->isEmpty())
-        <div class="alert alert-info text-center">
-            No pending leave applications requiring SSO action at the moment.
+    @if($leavesForRecord->isEmpty())
+        <div class="alert alert-info text-center shadow-sm">
+            <i class="fas fa-info-circle me-2"></i> No leave records currently requiring your attention.
         </div>
     @else
-        <div class="card">
-            <div class="card-body">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-archive me-2"></i> Leaves for Record</h5>
+            </div>
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
+                    <table class="table table-hover table-bordered mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th>#</th>
-                                <th>Student</th>
-                                {{-- Make sure your Leave model has start_date and end_date, not from_date/to_date unless you changed it from my earlier model code --}}
+                                <th>Student Name</th>
+                                <th>Department</th>
                                 <th>Leave Type</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                                <th>Reason</th>
-                                <th>Applied On</th>
-                                <th>Actions</th>
+                                <th>Dates</th>
+                                <th>Days</th>
+                                <th>Reason & Document</th>
+                                <th>Status</th>
+                                <th>DSA Approved On</th>
+                                <th style="min-width: 200px;">Action / Recorded</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($leaves as $index => $leave)
-                                <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>{{ $leave->student->name ?? 'N/A' }}</td>
-                                    <td>{{ $leave->leave_type ?? 'N/A' }}</td>
-                                    <td>{{ $leave->start_date instanceof \Carbon\Carbon ? $leave->start_date->format('Y-m-d') : \Carbon\Carbon::parse($leave->start_date)->format('Y-m-d') }}</td>
-                                    <td>{{ $leave->end_date instanceof \Carbon\Carbon ? $leave->end_date->format('Y-m-d') : \Carbon\Carbon::parse($leave->end_date)->format('Y-m-d') }}</td>
-                                    <td>{{ Str::limit($leave->reason ?? 'N/A', 60) }}</td>
-                                    <td>{{ $leave->created_at instanceof \Carbon\Carbon ? $leave->created_at->format('Y-m-d H:i') : \Carbon\Carbon::parse($leave->created_at)->format('Y-m-d H:i') }}</td>
-                                    <td>
-                                        {{-- Approve Form --}}
-                                        <form action="{{ route('sso.approve-leave', $leave->id) }}" method="POST" style="display:inline-block; margin-bottom: 5px;">
-                                            @csrf
-                                            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Approve this leave?')" title="Approve Leave">
-                                                <i class="fas fa-check"></i> Approve
-                                            </button>
-                                        </form>
+                            @php $ssoUserId = Auth::id(); @endphp
+                            @foreach($leavesForRecord as $index => $leave)
+                                @php
+                                    $dsaApprovalAction = $leave->approvalActions
+                                        ->where('acted_as_role', 'dsa')
+                                        ->where('action_taken', 'approved')
+                                        ->sortByDesc('action_at')
+                                        ->first();
 
-                                        {{-- Reject Form with Remarks Textarea --}}
-                                        <form action="{{ route('sso.reject-leave', $leave->id) }}" method="POST" style="display:block;">
-                                            @csrf
-                                            <div class="mb-2">
-                                                <textarea name="remarks" class="form-control form-control-sm" rows="2" placeholder="Reason for rejection (optional)"></textarea>
-                                                @error('remarks')
-                                                    <small class="text-danger">{{ $message }}</small>
-                                                @enderror
-                                            </div>
-                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Reject this leave?')" title="Reject Leave">
-                                                <i class="fas fa-times"></i> Reject
-                                            </button>
-                                        </form>
+                                    // Correctly check if SSO has recorded this leave
+                                    $ssoRecordedActions = $leave->approvalActions
+                                        ->filter(function ($action) use ($ssoUserId) {
+                                            return $action->user_id == $ssoUserId &&
+                                                   $action->acted_as_role === 'sso' &&
+                                                   $action->action_taken === 'recorded';
+                                        });
+                                    $ssoHasRecorded = $ssoRecordedActions->isNotEmpty();
+                                    $ssoRecordedAt = $ssoHasRecorded ? $ssoRecordedActions->first()->action_at->format('d M Y H:i') : null;
+                                @endphp
+                                <tr>
+                                    <td>{{ $leavesForRecord->firstItem() + $index }}</td>
+                                    <td>{{ $leave->student->name ?? 'N/A' }}</td>
+                                    <td>{{ $leave->student->department->name ?? 'N/A' }}</td>
+                                    <td>{{ $leave->type->name ?? 'N/A' }}</td>
+                                    <td>
+                                        {{ $leave->start_date->format('d M Y') }}
+                                        <small class="text-muted d-block">to {{ $leave->end_date->format('d M Y') }}</small>
+                                    </td>
+                                    <td>{{ $leave->number_of_days ?? 'N/A' }}</td>
+                                    <td>
+                                        <span title="{{ $leave->reason }}">{{ Str::limit($leave->reason, 30) }}</span>
+                                        @if ($leave->document)
+                                            <a href="{{ Storage::url($leave->document) }}" target="_blank" class="d-block text-info small" title="View Document">
+                                                <i class="fas fa-paperclip"></i> View Document
+                                            </a>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">{{ Str::title(str_replace('_', ' ', $leave->overall_status)) }}</span>
+                                        @if($leave->current_approver_role === 'sso' && $leave->overall_status === 'awaiting_sso_record_keeping')
+                                            <small class="d-block text-muted">Pending Your Record</small>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($dsaApprovalAction)
+                                            {{ $dsaApprovalAction->action_at->format('d M Y, H:i') }}
+                                            <small class="d-block text-muted">by {{ $dsaApprovalAction->user->name ?? 'DSA' }}</small>
+                                        @else
+                                            N/A
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($ssoHasRecorded)
+                                            <span class="badge bg-light text-success border border-success">
+                                                <i class="fas fa-check-circle me-1"></i> Recorded
+                                            </span>
+                                            @if($ssoRecordedAt)
+                                            <small class="d-block text-muted">
+                                                {{ $ssoRecordedAt }}
+                                            </small>
+                                            @endif
+                                        @elseif ($leave->current_approver_role === 'sso' || $leave->overall_status === 'approved')
+                                            <form action="{{ route('sso.leaves.mark-recorded', $leave->id) }}" method="POST" style="display:inline-block;">
+                                                @csrf
+                                                {{--
+                                                <textarea name="sso_remarks" class="form-control form-control-sm mb-1" rows="1" placeholder="Optional remarks..."></textarea>
+                                                --}}
+                                                <button type="submit" class="btn btn-info btn-sm" title="Mark as Recorded">
+                                                    <i class="fas fa-save"></i> Mark as Recorded
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -77,16 +134,12 @@
                     </table>
                 </div>
             </div>
+            @if($leavesForRecord->hasPages())
+                <div class="card-footer d-flex justify-content-center">
+                    {{ $leavesForRecord->links() }}
+                </div>
+            @endif
         </div>
     @endif
 </div>
 @endsection
-
-@push('styles')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-@endpush
-
-@push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-@endpush

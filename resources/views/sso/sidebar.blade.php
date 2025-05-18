@@ -5,7 +5,7 @@
     {{-- Approve/Reject Leaves --}}
     <li class="{{ request()->routeIs('sso.dashboard') ? 'active' : '' }}">
       <a href="{{ route('sso.dashboard') }}">
-        <i class="fas fa-check-circle fa-fw"></i> Approve / Reject Leave
+        <i class="fas fa-check-circle fa-fw"></i> Leave Records
       </a>
     </li>
 

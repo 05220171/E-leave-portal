@@ -171,9 +171,10 @@ Route::middleware([
          ->name('sso.')
          ->group(function () {
         Route::get('/dashboard', [SSOController::class, 'dashboard'])->name('dashboard');
-        Route::post('/approve/{id}', [SSOController::class, 'approveLeave'])->name('approve-leave');
-        Route::post('/reject/{id}', [SSOController::class, 'rejectLeave'])->name('reject-leave');
-    });
+        Route::post('/leaves/{leave}/mark-recorded', [SSOController::class, 'markAsRecorded'])->name('leaves.mark-recorded');
+        });
+        // Route::post('/approve/{id}', [SSOController::class, 'approveLeave'])->name('approve-leave');
+        // Route::post('/reject/{id}', [SSOController::class, 'rejectLeave'])->name('reject-leave');
 
 });
 
