@@ -171,6 +171,8 @@ class DsaController extends Controller
             'remarks' => 'nullable|string|max:1000',
         ]);
 
+        $rejectionRemarks = $request->input('remarks'); // Get remarks string
+
         DB::beginTransaction();
         try {
             LeaveRequestApproval::create([
@@ -184,16 +186,19 @@ class DsaController extends Controller
             ]);
 
             $leave->overall_status = 'rejected_by_dsa';
-            $leave->final_remarks = $request->input('remarks');
+            $leave->final_remarks = $rejectionRemarks;
             $leave->current_approver_role = null;
             $leave->save();
 
             DB::commit();
 
             try {
-                Mail::to($leave->student->email)->send(new LeaveRejectedToStudent($leave, $request->input('remarks')));
+                // === CORRECTED MAILABLE CALL ===
+                // Pass the $dsaUser object as the second argument
+                // Pass the $rejectionRemarks string as the third argument
+                Mail::to($leave->student->email)->send(new LeaveRejectedToStudent($leave, $dsaUser, $rejectionRemarks));
             } catch (\Exception $e) {
-                Log::error("DSA Reject - Email sending failed for Leave ID {$id}: " . $e->getMessage());
+                Log::error("DSA Reject - Email sending failed for Leave ID {$id}: " . $e->getMessage() . "\n" . $e->getTraceAsString());
             }
 
             return redirect()->route('dsa.dashboard')->with('success', 'Leave request rejected successfully.');
