@@ -9,6 +9,11 @@
         <i class="fas fa-check-circle fa-fw"></i> Approve / Reject Leave
       </a>
     </li>
+    <li class="{{ request()->routeIs('dsa.approved-records') ? 'active' : '' }}">
+      <a href="{{ route('dsa.approved-records') }}">
+        <i class="fas fa-check-circle fa-fw"></i> Approved Records
+      </a>
+    </li>
 
     
 

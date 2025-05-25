@@ -8,6 +8,11 @@
         <i class="fas fa-check-circle fa-fw"></i> Approve / Reject Leave
       </a>
     </li>
+    <li class="{{ request()->routeIs('hod.approved-records') ? 'active' : '' }}">
+      <a href="{{ route('hod.approved-records') }}">
+        <i class="fas fa-check-circle fa-fw"></i> Approved Records
+      </a>
+    </li>
 
     
     {{-- Logout Button --}}

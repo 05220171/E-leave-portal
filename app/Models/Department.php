@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory; // <-- Good to add
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;    // <-- IMPORT THIS
+use Illuminate\Database\Eloquent\Relations\HasMany;    // This is correctly imported
 
 class Department extends Model
 {
-    use HasFactory; // <-- Good to add
+    use HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -17,16 +17,32 @@ class Department extends Model
      */
     protected $fillable = [
         'name',
-        // Add any other fields your departments table has that you want to be mass assignable
-        // e.g., 'hod_id', 'description', etc.
+        // Add any other fillable attributes for your department
     ];
 
     /**
-     * Get the users associated with the department.
+     * Get the users associated with this department.
+     * A department can have many users.
      */
-    public function users(): HasMany // <-- ADDED INVERSE RELATIONSHIP
+    public function users(): HasMany
     {
-        // Assumes 'users' table has 'department_id' foreign key
+        // This assumes your 'users' table has a 'department_id' foreign key
+        // that references the 'id' of this department.
         return $this->hasMany(User::class, 'department_id');
     }
+
+    /**
+     * Get the programs offered by this department.
+     * A department can offer many programs.
+     */
+    public function programs(): HasMany // Added return type hint for clarity
+    {
+        // This assumes your 'programs' table has a 'department_id' foreign key
+        // that references the 'id' of this department.
+        // Laravel will infer 'department_id' if you follow conventions.
+        // You can explicitly state it if needed: return $this->hasMany(Program::class, 'department_id');
+        return $this->hasMany(Program::class);
+    }
+
+    // You can add other model-specific logic, accessors, mutators, etc., here
 }

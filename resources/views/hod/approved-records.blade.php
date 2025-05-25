@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'SSO Dashboard - Leave Records')
+@section('title', 'HOD - My Approved Leave Records')
 
 @section('content')
 <div class="container mt-4">
-    {{-- Using page-section-title for the main heading. text-center can be kept or removed based on preference. --}}
-    <h1 class="page-section-title text-center">SSO Dashboard</h1>
-    <p class="text-center text-muted mb-4">Approved Leave Applications for Record Keeping</p>
+    {{-- Main page heading --}}
+    <h1 class="page-section-title text-center">Approved Leave Records</h1>
+    <p class="text-center text-muted mb-4">Leaves you have personally approved from your department.</p>
 
     @if(session('success'))
         <div class="custom-alert custom-alert-success" role="alert">
@@ -20,61 +20,45 @@
             <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close">×</button>
         </div>
     @endif
-    @if(session('info'))
-        <div class="custom-alert custom-alert-info" role="alert">
-            {{ session('info') }}
-            <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close">×</button>
-        </div>
-    @endif
 
-    @if($leavesForRecord->isEmpty())
-        <div class="custom-alert custom-alert-info text-center"> {{-- Removed shadow-sm, as custom-alert has its own styling --}}
-            <i class="fas fa-info-circle me-2"></i> No leave records currently requiring your attention.
+    @if($approvedLeaves->isEmpty())
+        <div class="custom-alert custom-alert-info text-center">
+            <i class="fas fa-info-circle me-2"></i> You have not approved any leave requests yet, or no records match.
         </div>
     @else
-        {{-- Replaced card structure with a simple heading and the custom table wrapper --}}
-        <h3 class="mb-3 mt-4" style="font-weight: 600; color: #374151;">
-            <i class="fas fa-archive me-2"></i> Leaves for Record
+        {{-- Heading for the table section, replacing card-header --}}
+        <h3 class="mb-3 mt-4" style="font-weight: 600; color: #16a085;"> {{-- Using a green color similar to Bootstrap's bg-success text --}}
+            <i class="fas fa-check-double me-2"></i> Leave Approved by You
         </h3>
+
+        {{-- Table wrapper and table with custom classes --}}
         <div class="custom-table-wrapper">
-            <table class="custom-data-table"> {{-- Removed table-hover, table-bordered, mb-0 as custom-data-table handles styling --}}
-                <thead> {{-- Removed table-light --}}
+            <table class="custom-data-table">
+                <thead>
                     <tr>
-                        <th>Sl No.</th>
+                        <th>NO.</th>
                         <th>Student Name</th>
-                        <th>Department</th>
                         <th>Leave Type</th>
                         <th>Dates</th>
                         <th>Days</th>
                         <th>Reason & Document</th>
-                        <th>Status</th>
-                        <th>DSA Approved On</th>
-                        <th style="min-width: 200px;">Action / Recorded</th>
+                        <th>Applied On</th>
+                        <th>Final Status</th>
+                        <th>Your Approval Date</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @php $ssoUserId = Auth::id(); @endphp
-                    @foreach($leavesForRecord as $index => $leave)
+                    @foreach($approvedLeaves as $index => $leave)
                         @php
-                            $dsaApprovalAction = $leave->approvalActions
-                                ->where('acted_as_role', 'dsa')
+                            $hodApprovalAction = $leave->approvalActions
+                                ->where('user_id', Auth::id())
+                                ->where('acted_as_role', 'hod')
                                 ->where('action_taken', 'approved')
-                                ->sortByDesc('action_at')
                                 ->first();
-
-                            $ssoRecordedActions = $leave->approvalActions
-                                ->filter(function ($action) use ($ssoUserId) {
-                                    return $action->user_id == $ssoUserId &&
-                                           $action->acted_as_role === 'sso' &&
-                                           $action->action_taken === 'recorded';
-                                });
-                            $ssoHasRecorded = $ssoRecordedActions->isNotEmpty();
-                            $ssoRecordedAt = $ssoHasRecorded ? $ssoRecordedActions->first()->action_at->format('d M Y H:i') : null;
                         @endphp
                         <tr>
-                            <td>{{ $leavesForRecord->firstItem() + $index }}</td>
+                            <td>{{ $approvedLeaves->firstItem() + $index }}</td>
                             <td>{{ $leave->student->name ?? 'N/A' }}</td>
-                            <td>{{ $leave->student->department->name ?? 'N/A' }}</td>
                             <td>{{ $leave->type->name ?? 'N/A' }}</td>
                             <td>
                                 {{ $leave->start_date->format('d M Y') }}
@@ -89,46 +73,23 @@
                                     </a>
                                 @endif
                             </td>
+                            <td>{{ $leave->created_at->format('d M Y, H:i') }}</td>
                             <td>
-                                {{-- Assuming 'approved' is the primary status to show here with this style --}}
-                                <span class="status-badge status-approved">
+                                {{-- Custom status badges --}}
+                                <span class="status-badge
+                                    @if($leave->overall_status === 'approved') status-approved
+                                    @elseif($leave->overall_status === 'cancelled') status-cancelled
+                                    @elseif(Str::startsWith($leave->overall_status, 'rejected_by_')) status-rejected
+                                    @elseif(Str::startsWith($leave->overall_status, 'awaiting_')) status-pending
+                                    @else status-default @endif">
                                     {{ Str::title(str_replace('_', ' ', $leave->overall_status)) }}
                                 </span>
-                                @if($leave->current_approver_role === 'sso' && $leave->overall_status === 'awaiting_sso_record_keeping')
-                                    <small class="d-block text-muted">Pending Your Record</small>
-                                @endif
                             </td>
                             <td>
-                                @if($dsaApprovalAction)
-                                    {{ $dsaApprovalAction->action_at->format('d M Y, H:i') }}
-                                    <small class="d-block text-muted">by {{ $dsaApprovalAction->user->name ?? 'DSA' }}</small>
+                                @if($hodApprovalAction)
+                                    {{ $hodApprovalAction->action_at->format('d M Y, H:i') }}
                                 @else
                                     N/A
-                                @endif
-                            </td>
-                            <td class="actions-cell">
-                                @if ($ssoHasRecorded)
-                                    {{-- Using a custom status badge for "Recorded" --}}
-                                    <span class="status-badge status-recorded">
-                                        <i class="fas fa-check-circle me-1"></i> Recorded
-                                    </span>
-                                    @if($ssoRecordedAt)
-                                    <small class="d-block text-muted">
-                                        {{ $ssoRecordedAt }}
-                                    </small>
-                                    @endif
-                                @elseif ($leave->current_approver_role === 'sso' || $leave->overall_status === 'approved')
-                                    <form action="{{ route('sso.leaves.mark-recorded', $leave->id) }}" method="POST" class="d-inline-form">
-                                        @csrf
-                                        {{--
-                                        <textarea name="sso_remarks" class="form-control form-control-sm mb-1" rows="1" placeholder="Optional remarks..."></textarea>
-                                        --}}
-                                        <button type="submit" class="custom-btn-sm custom-btn-info" title="Mark as Recorded">
-                                            <i class="fas fa-save"></i> Mark as Recorded
-                                        </button>
-                                    </form>
-                                @else
-                                    <span class="text-muted">-</span>
                                 @endif
                             </td>
                         </tr>
@@ -137,9 +98,9 @@
             </table>
         </div>
 
-        @if($leavesForRecord->hasPages())
+        @if($approvedLeaves->hasPages())
             <div class="mt-4 d-flex justify-content-center pagination-wrapper">
-                {{ $leavesForRecord->links() }}
+                {{ $approvedLeaves->links() }}
             </div>
         @endif
     @endif
@@ -149,29 +110,21 @@
 @section('css')
 {{-- This CSS should ideally be in a global stylesheet linked in layouts.app.blade.php --}}
 <style>
-    /* === Global Custom Styles (can be moved to a shared CSS file later) === */
+    /* === Global Custom Styles === */
     .page-section-title {
-        font-size: 1.75rem; /* Was 1.75rem, can be larger for H1 */
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 1rem; /* Adjusted margin for H1 */
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #ecf0f1;
+        font-size: 1.75rem; font-weight: 600; color: #2c3e50; margin-bottom: 1rem;
+        padding-bottom: 0.5rem; border-bottom: 2px solid #ecf0f1;
     }
-    /* If page-section-title is used for H1 and you don't want the border for it always: */
-    h1.page-section-title {
-        font-size: 2.25rem; /* Larger for H1 */
-        /* border-bottom: none; */ /* Uncomment if border not desired for H1 */
-    }
+    h1.page-section-title { font-size: 2.25rem; /* border-bottom: none; */ }
     .text-center { text-align: center !important; }
     .text-muted { color: #6c757d !important; }
     .mb-4 { margin-bottom: 1.5rem !important; }
     .mb-3 { margin-bottom: 1rem !important; }
     .mt-4 { margin-top: 1.5rem !important; }
-    .me-1 { margin-right: 0.25rem !important; }
     .me-2 { margin-right: 0.5rem !important; }
     .d-block { display: block !important; }
-    .text-info { color: #0dcaf0 !important; } /* Bootstrap info color, ensure it matches your custom scheme or define custom */
+    .text-info { color: #17a2b8 !important; } /* Standard Bootstrap info color - adjust if your custom palette is different */
+    .small { font-size: .875em; }
 
 
     .custom-btn, .custom-btn-sm {
@@ -206,7 +159,7 @@
 
     .custom-table-wrapper {
         overflow-x: auto; background-color: #fff; border: 1px solid #dfe3e8;
-        border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-top: 1rem; /* Reduced margin-top as h3 has mb-3 */
+        border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-top: 1rem;
     }
     .custom-data-table { width: 100%; border-collapse: collapse; }
     .custom-data-table th,
@@ -230,17 +183,12 @@
         color: #fff; padding: 0.3em 0.7em; font-size: 0.8em; font-weight: 600;
         border-radius: 12px; text-transform: capitalize; display: inline-block;
     }
-    .status-badge.status-approved { background-color: #2ecc71; } /* Green */
-    .status-badge.status-cancelled { background-color: #95a5a6; } /* Grey */
-    .status-badge.status-rejected { background-color: #e74c3c; } /* Red */
+    .status-badge.status-approved { background-color: #2ecc71; }
+    .status-badge.status-cancelled { background-color: #95a5a6; }
+    .status-badge.status-rejected { background-color: #e74c3c; }
     .status-badge.status-pending { background-color: #f39c12; color: #2c3e50;}
     .status-badge.status-default { background-color: #bdc3c7; color: #2c3e50;}
-    /* New status for "Recorded" */
-    .status-badge.status-recorded {
-        background-color: #e9f7ef; /* Light green background */
-        color: #198754; /* Dark green text (Bootstrap success text color) */
-        border: 1px solid #a6d9b8; /* Lighter green border */
-    }
+    .status-badge.status-recorded { background-color: #e9f7ef; color: #198754; border: 1px solid #a6d9b8; }
 
 
     .actions-cell .custom-btn-sm { margin-right: 5px; }
@@ -261,5 +209,9 @@
     .pagination-wrapper .page-item:not(.active):not(.disabled) .page-link:hover {
         color: #2374ab; background-color: #e9ecef; border-color: #dee2e6;
     }
+
+    /* Utility classes to ensure they are defined if not using Bootstrap's core CSS fully */
+    .d-flex { display: flex !important; }
+    .justify-content-center { justify-content: center !important; }
 </style>
 @stop

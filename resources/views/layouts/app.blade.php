@@ -1,35 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard</title>
-  {{-- Load Vite assets FIRST if they include Bootstrap --}}
-  
-  @vite(['resources/css/app.css', 'resources/js/app.js'])
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-  {{-- Load custom styles AFTER Bootstrap/main app CSS --}}
-  {{-- Consider importing student.css within app.css instead --}}
+  <title>{{ config('app.name', 'Dashboard') }} - @yield('title', 'Page')</title>
+
+  <!-- CSRF Token -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  {{-- Main Custom Stylesheet --}}
   <link rel="stylesheet" href="{{ asset('css/student.css') }}">
+
+  {{-- Font Awesome for icons (if used across the site) --}}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+  {{-- For page-specific styles --}}
+  @yield('css')
+
 </head>
 <body>
-  <div class="dashboard">
-    @auth
-      @if(auth()->user()->role == 'student')
+  <div id="app" class="dashboard"> {{-- 'dashboard' class from your student.css for flex layout --}}
+    @auth {{-- Ensure user is authenticated before trying to access role --}}
+      @php $userRole = auth()->user()->role; @endphp {{-- Get role once for efficiency --}}
+
+      {{-- Sidebar inclusion based on user role --}}
+      @if($userRole == 'student')
         @include('student.sidebar')
-      @elseif(auth()->user()->role == 'hod')
+      @elseif($userRole == 'hod')
         @include('hod.sidebar')
-      @elseif(auth()->user()->role == 'dsa')
+      @elseif($userRole == 'dsa')
         @include('dsa.sidebar')
-      @elseif(auth()->user()->role == 'sso')
+      @elseif($userRole == 'sso')
         @include('sso.sidebar')
-      @elseif(auth()->user()->role == 'admin')
+      @elseif($userRole == 'admin') {{-- Assuming 'admin' is the role for superadmin --}}
         @include('superadmin.sidebar')
       @endif
     @endauth
 
-    <div class="main-content">
+    <div class="main-content"> {{-- 'main-content' class from your student.css --}}
       @yield('content')
     </div>
   </div>
+
+  {{-- Global Scripts (like jQuery, Bootstrap JS (if you add it), your main app.js) would go here --}}
+  {{-- <script src="{{ asset('js/app.js') }}"></script> --}}
+
+  {{-- Page-specific scripts --}}
+  @yield('js')
+
 </body>
 </html>

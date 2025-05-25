@@ -30,19 +30,21 @@
 </head>
 <body>
     <div class="container">
-        <div class="header-block">
-            {{-- If you have a logo, ensure it's accessible via an absolute path or embed it --}}
-            {{-- <img src="{{ public_path('images/institution_logo.png') }}" alt="Institution Logo" style="max-height: 70px; margin-bottom: 10px;"> --}}
-            <div class="institution-name">{{ config('app.name', 'Your E-Leave Portal') }}</div>
+    <div class="header-block">
+            {{-- Check if the logo file exists before trying to display it --}}
+            @if(file_exists(public_path('assets/img/E-logo.png')))
+                <img src="{{ public_path('assets/img/E-logo.png') }}" alt="Institution Logo" style="max-height: 100px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
+            @else
+                {{-- Optional: Fallback text or placeholder if logo is missing --}}
+                {{-- <p style="text-align:center; font-style:italic; color:#999;">[Logo Placeholder]</p> --}}
+            @endif
+            <div class="institution-name">Jigme Namgyel Engineering College</div> {{-- Corrected spelling --}}
             <div class="certificate-title">Official Leave Record</div>
         </div>
 
         <h2 class="section-heading">Student Information</h2>
         <table class="details-table">
             <tr><th>Student Name:</th><td>{{ $leave->student->name ?? 'N/A' }}</td></tr>
-            <tr><th>Student ID:</th><td>{{-- Assuming User model has a student_id_number or similar --}}
-                {{ $leave->student->student_id_number ?? $leave->student->id }} {{-- Fallback to user ID --}}
-            </td></tr>
             <tr><th>Department:</th><td>{{ $leave->student->department->name ?? 'N/A' }}</td></tr>
             @if($leave->student->program)
             <tr><th>Program:</th><td>{{ $leave->student->program }}</td></tr>
@@ -74,10 +76,10 @@
             <table class="history-table">
                 <thead>
                     <tr>
-                        <th>Step</th>
-                        <th>Action By (Role)</th>
-                        <th>Action By (Name)</th>
-                        <th>Action Taken</th>
+                        <th>Sl No.</th>
+                        <th>Approved by</th>
+                        <th>Name</th>
+                        <th>Status</th>
                         <th>Date & Time</th>
                         <th>Remarks</th>
                     </tr>
@@ -108,7 +110,7 @@
 
         <div class="footer">
             Generated on: {{ now()->format('F d, Y H:i A') }}<br>
-            This is a system-generated document from {{ config('app.name') }}.
+            This is a system-generated document from E-Leave Portal.
         </div>
     </div>
 </body>

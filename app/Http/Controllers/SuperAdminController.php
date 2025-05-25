@@ -11,6 +11,10 @@ use App\Imports\UsersImport;        // Import your UsersImport class
 use Illuminate\Support\Facades\DB;   // For database transactions
 use Maatwebsite\Excel\Validators\ValidationException as ExcelValidationException; // To catch Excel validation exceptions
 use Illuminate\Support\Facades\Log; // For logging general exceptions
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
+use App\Http\Requests\StoreUserRequest; // <--- This line IMPORTS the class that DOES the validation
+use App\Http\Requests\UpdateUserRequest; // <--- This line IMPORTS the class that DOES the validation
 
 class SuperAdminController extends Controller
 {
@@ -29,27 +33,15 @@ class SuperAdminController extends Controller
 
     public function create()
     {
-        $departments = Department::all();
+        $departments = Department::orderBy('name')->get(); // Fetch all departments, optionally order them
+        // No $programOptions or $classOptions are passed here for AJAX dependent dropdowns
         return view('superadmin.create-user', compact('departments'));
     }
 
-    public function store(Request $request)
+
+    public function store(StoreUserRequest $request)
     {
-        $rules = [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|string|in:admin,student,hod,dsa,sso,superadmin,daa,president', // Added superadmin
-            'department_id' => 'required|exists:departments,id',
-        ];
-
-        // Assuming 'class' is the form field name for class/year
-        if ($request->role === 'student') {
-            $rules['program'] = 'required|string|max:255';
-            $rules['class'] = 'required|string|max:255'; // Changed from class_year to class
-        }
-
-        $validated = $request->validate($rules);
+        $validated = $request->validated();
 
         User::create([
             'name' => $validated['name'],
@@ -57,39 +49,30 @@ class SuperAdminController extends Controller
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
             'department_id' => $validated['department_id'],
-            'program' => $validated['role'] === 'student' ? $validated['program'] : null,
-            'class' => $validated['role'] === 'student' ? $validated['class'] : null, // Changed from class_year
+            'program' => $validated['role'] === 'student' ? $validated['program'] : null, // 'program' here will be the program CODE
+            'class' => $validated['role'] === 'student' ? $validated['class'] : null,     // 'class' here will be the class CODE
+            'email_verified_at' => now(),
         ]);
 
         return redirect()->route('superadmin.users.index')->with('success', 'User created successfully.');
     }
 
-    public function edit(User $user)
+    public function edit(User $user) // User $user for route model binding
     {
         $departments = Department::all();
-        $roles = ['admin', 'student', 'hod', 'dsa', 'sso', 'superadmin', 'daa', 'president'];
-        return view('superadmin.edit-user', compact('user', 'departments', 'roles'));
+        $assignableSystemRoles = ['dsa', 'sso', 'daa', 'president', 'admin', 'superadmin'];
+        $departmentSpecificRoles = ['hod', 'student'];
+
+        return view('superadmin.edit-user', compact('user', 'departments', 'assignableSystemRoles', 'departmentSpecificRoles'));
     }
 
-    public function update(Request $request, User $user)
+
+    /**
+     * Update the specified user in storage.
+     */
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $rules = [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|string|in:admin,student,hod,dsa,sso,superadmin,daa,president', // Added superadmin
-            'department_id' => 'required|exists:departments,id',
-        ];
-
-        if ($request->filled('password')) {
-            $rules['password'] = 'sometimes|string|min:8|confirmed';
-        }
-
-        if ($request->role === 'student') {
-            $rules['program'] = 'required|string|max:255';
-            $rules['class'] = 'required|string|max:255'; // Changed from class_year
-        }
-
-        $validated = $request->validate($rules);
+        $validated = $request->validated();
 
         $userData = [
             'name' => $validated['name'],
@@ -97,10 +80,10 @@ class SuperAdminController extends Controller
             'role' => $validated['role'],
             'department_id' => $validated['department_id'],
             'program' => $validated['role'] === 'student' ? $validated['program'] : null,
-            'class' => $validated['role'] === 'student' ? $validated['class'] : null, // Changed from class_year
+            'class' => $validated['role'] === 'student' ? $validated['class'] : null,
         ];
 
-        if ($request->filled('password')) {
+        if (isset($validated['password'])) {
             $userData['password'] = Hash::make($validated['password']);
         }
 
@@ -129,50 +112,85 @@ class SuperAdminController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:10240' // Max 10MB, adjust as needed
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240'
         ]);
 
         $file = $request->file('file');
-        // Note: No need to pass any arguments to UsersImport constructor unless you specifically designed it that way
         $usersImport = new UsersImport();
 
         DB::beginTransaction();
-
         try {
             Excel::import($usersImport, $file);
+            $importFailures = $usersImport->getValidationFailures();
+            $importedRowCount = $usersImport->getImportedRowCount();
 
-            // If UsersImport uses SkipsOnError, errors for individual rows are handled by its onError() method (e.g., logged).
-            // The import process itself will complete here unless a more critical, unskippable error occurs.
-            // If you need to collect and display skipped row errors, you'd implement a collector in UsersImport
-            // and retrieve it here. For now, a general success message is good if SkipsOnError is used.
-
+            if (!empty($importFailures)) {
+                DB::rollBack();
+                $errorMessages = $this->formatImportFailures($importFailures);
+                Log::warning('User Import Validation Failures (Collected by UsersImport): ', $errorMessages);
+                return redirect()->route('superadmin.users.importForm')
+                                 ->with('error', 'No users were imported. Please correct the issues listed below and try again.')
+                                 ->with('import_errors', $errorMessages);
+            }
             DB::commit();
-            return redirect()->route('superadmin.users.index')->with('success', 'Users import process completed. Check logs for details on any skipped rows if SkipsOnError was used.');
-
+            if ($importedRowCount > 0) {
+                 return redirect()->route('superadmin.users.index')->with('success', "Users import process completed. {$importedRowCount} users were successfully imported.");
+            } else {
+                 return redirect()->route('superadmin.users.index')->with('info', "Users import process completed. No new users were imported (possibly all rows had issues or the file was empty).");
+            }
         } catch (ExcelValidationException $e) {
             DB::rollBack();
-            $failures = $e->failures(); // This gets specific row validation failures
-            $errorMessages = [];
-            foreach ($failures as $failure) {
-                // Construct a more detailed error message
-                $errorMessages[] = 'Error on Excel row ' . $failure->row() .
-                                   ' for attribute "' . $failure->attribute() .
-                                   '" with value "' . ($failure->values()[$failure->attribute()] ?? 'N/A') .
-                                   '". Errors: ' . implode(', ', $failure->errors());
-            }
-            Log::warning('User Import Validation Failures: ', $errorMessages); // Log for admin reference
+            $failures = $e->failures();
+            $errorMessages = $this->formatExcelValidationFailures($failures);
+            Log::warning('User Import ExcelValidationException (Maatwebsite Rules): ', $errorMessages);
             return redirect()->route('superadmin.users.importForm')
-                             ->with('error', 'User import failed due to validation errors. Please correct the issues listed below and try again.')
-                             ->with('import_errors', $errorMessages); // Pass errors to the view
+                             ->with('error', 'User import failed due to initial validation errors. Please correct the issues listed below and try again.')
+                             ->with('import_errors', $errorMessages);
         } catch (\Maatwebsite\Excel\Exceptions\SheetNotFoundException $e) {
             DB::rollBack();
             Log::error('User Import Sheet Not Found: ' . $e->getMessage());
             return redirect()->route('superadmin.users.importForm')->with('error', 'Import failed: A required sheet was not found in the Excel file.');
         } catch (\Exception $e) {
             DB::rollBack();
-            // Log the full exception for detailed debugging
             Log::error('General User Import Exception: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect()->route('superadmin.users.importForm')->with('error', 'An unexpected error occurred during user import. Please check the file format or contact support. Details have been logged.');
+            $errorMessage = 'An unexpected error occurred during user import. Please check the file format or contact support.';
+            if (app()->environment('local')) {
+                $errorMessage .= ' Details: ' . $e->getMessage();
+            }
+            return redirect()->route('superadmin.users.importForm')->with('error', $errorMessage);
         }
+    }
+
+    private function formatExcelValidationFailures($failures): array
+    {
+        $errorMessages = [];
+        foreach ($failures as $failure) {
+            $errorMessages[] = 'Excel Row ' . $failure->row() .
+                               ' (Field: ' . $failure->attribute() .
+                               ', Value: "' . ($failure->values()[$failure->attribute()] ?? 'N/A') .
+                               '") - Errors: ' . implode(', ', $failure->errors());
+        }
+        return $errorMessages;
+    }
+
+    private function formatImportFailures($failures): array
+    {
+        $errorMessages = [];
+        foreach ($failures as $failure) {
+             $errorMessage = 'Excel Row ' . $failure->row() .
+                            ' (Field: ' . $failure->attribute() . ')';
+            $values = $failure->values();
+            if (!empty($values) && isset($values[$failure->attribute()])) {
+                 $errorMessage .= ' (Value: "' . $values[$failure->attribute()] . '")';
+            } elseif (!empty($values) && $failure->attribute() === 'role' && (isset($values['department_id']) || isset($values['role'])) ){
+                $context = [];
+                if(isset($values['department_id'])) $context[] = "Dept ID: ".$values['department_id'];
+                if(isset($values['role'])) $context[] = "Role: ".$values['role'];
+                if(!empty($context)) $errorMessage .= ' (Context: ' . implode(', ', $context) . ')';
+            }
+            $errorMessage .= ' - Errors: ' . implode(', ', $failure->errors());
+            $errorMessages[] = $errorMessage;
+        }
+        return $errorMessages;
     }
 }

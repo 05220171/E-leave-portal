@@ -14,6 +14,7 @@ use App\Http\Controllers\DaaController;
 use App\Http\Controllers\PresidentController;
 use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\LeaveWorkflowController;
+use App\Http\Controllers\DependentDropdownController; // Create this controller
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -62,8 +63,23 @@ Route::middleware([
             Route::post('users/import', [SuperAdminController::class, 'import'])->name('users.import');
             Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
 
-            // ✅ 2. ADD THIS LINE FOR DEPARTMENT ROUTES
             Route::resource('departments', DepartmentController::class);
+
+            // --- API Routes for Dependent Dropdowns (Protected by 'role:admin') ---
+            Route::prefix('api') // Further prefixing to /superadmin/api/
+                 ->name('api.')   // Further naming to superadmin.api.
+                 ->group(function () {
+                    // Expects a department ID or model instance, e.g., /superadmin/api/departments/1/programs
+                    Route::get('departments/{department}/programs', [DependentDropdownController::class, 'getPrograms'])
+                         ->name('departments.programs');
+
+                    // Expects a program ID or model instance (or code if you adjust controller),
+                    // e.g., /superadmin/api/programs/DCSN/classes or /superadmin/api/programs/5/classes
+                    Route::get('programs/{program}/classes', [DependentDropdownController::class, 'getClasses'])
+                         ->name('programs.classes');
+            });
+
+            
             Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
             // --- ADD LEAVE WORKFLOW ROUTES (Nested under leave-types) ---
             Route::prefix('leave-types/{leaveType}/workflows')->name('leave-types.workflows.')
@@ -112,6 +128,7 @@ Route::middleware([
         Route::get('/student-history', [HodController::class, 'studentHistory'])->name('student-history');
         Route::post('/approve/{id}', [HodController::class, 'approve'])->name('approve-leave');
         Route::post('/reject/{id}', [HodController::class, 'reject'])->name('reject-leave');
+        Route::get('/approved-records', [HodController::class, 'approvedRecords'])->name('approved-records');
     });
 
 
@@ -128,6 +145,7 @@ Route::middleware([
         Route::get('/dashboard', [DsaController::class, 'index'])->name('dashboard');
         Route::post('/approve/{id}', [DsaController::class, 'approve'])->name('approve');
         Route::post('/reject/{id}', [DsaController::class, 'reject'])->name('reject');
+        Route::get('/approved-records', [DsaController::class, 'approvedRecords'])->name('approved-records');
     });
 
 

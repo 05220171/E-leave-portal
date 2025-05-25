@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\LeaveApprovedByFirstApproverToStudent; // <<< ADD THIS
 use App\Mail\NewLeaveRequestForYourApproval;
 use App\Mail\LeaveRejectedToStudent;
+use App\Mail\LeaveApprovedFinalToStudent;
 
 class HodController extends Controller
 {
@@ -214,5 +215,33 @@ class HodController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(15);
         return view('hod.student-history', compact('leavesHistory'));
+    }
+
+    public function approvedRecords()
+    {
+        $hodUser = Auth::user();
+        if (!$hodUser || !$hodUser->department_id) {
+            return redirect()->route('hod.dashboard')
+                             ->with('error', 'Unable to determine your department.');
+        }
+
+        // Find leave_ids where this HOD took an 'approved' action
+        $approvedLeaveIdsByHod = LeaveRequestApproval::where('user_id', $hodUser->id)
+            ->where('acted_as_role', 'hod') // Ensure it was an action taken as HOD
+            ->where('action_taken', 'approved')
+            ->pluck('leave_id') // Get an array of leave IDs
+            ->unique(); // Ensure unique IDs if HOD could somehow approve twice (should not happen)
+
+        // Fetch the actual Leave records for these IDs, along with necessary details
+        // Only fetch leaves that are from the HOD's department for an extra layer of security/relevance
+        $approvedLeaves = Leave::with(['student.department', 'type', 'approvalActions.user'])
+            ->whereIn('id', $approvedLeaveIdsByHod)
+            ->whereHas('student', function ($query) use ($hodUser) {
+                $query->where('department_id', $hodUser->department_id);
+            })
+            ->orderBy('updated_at', 'desc') // Show most recently actioned ones first
+            ->paginate(15); // Or your preferred pagination number
+
+        return view('hod.approved-records', compact('approvedLeaves', 'hodUser'));
     }
 }

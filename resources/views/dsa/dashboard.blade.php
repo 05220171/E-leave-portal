@@ -40,7 +40,7 @@
                     <table class="table table-hover table-bordered mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>#</th>
+                                <th>Sl No.</th>
                                 <th>Student Name</th>
                                 <th>Department</th>
                                 <th>Leave Type</th>

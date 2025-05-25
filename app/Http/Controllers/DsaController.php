@@ -208,4 +208,26 @@ class DsaController extends Controller
             return redirect()->route('dsa.dashboard')->with('error', 'An error occurred while rejecting the leave: ' . $e->getMessage());
         }
     }
+
+    public function approvedRecords()
+    {
+        $dsaUser = Auth::user();
+
+        // Find leave_ids where this DSA took an 'approved' action
+        $approvedLeaveIdsByDsa = LeaveRequestApproval::where('user_id', $dsaUser->id)
+            ->where('acted_as_role', 'dsa') // Ensure it was an action taken as DSA
+            ->where('action_taken', 'approved')
+            ->pluck('leave_id')
+            ->unique();
+
+        // Fetch the actual Leave records for these IDs
+        // DSA typically sees leaves from all departments they've acted upon.
+        $approvedLeaves = Leave::with(['student.department', 'type', 'approvalActions.user'])
+            ->whereIn('id', $approvedLeaveIdsByDsa)
+            ->orderBy('updated_at', 'desc') // Show most recently actioned ones first
+            ->paginate(15);
+
+        return view('dsa.approved-records', compact('approvedLeaves', 'dsaUser'));
+    }
+    
 }
