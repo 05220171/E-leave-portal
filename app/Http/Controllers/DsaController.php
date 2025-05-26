@@ -4,26 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Models\Leave;
 use App\Models\LeaveRequestApproval;
-use App\Models\LeaveWorkflow;
+// Use User, LeaveType if needed for other logic within these methods
 use App\Models\User;
-use App\Models\LeaveType; // Ensure this is used if you check by name
+use App\Models\LeaveType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
 
+// Your Mailable imports
 use App\Mail\LeaveApprovedFinalToStudent;
 use App\Mail\LeaveApprovedToStakeholders;
 use App\Mail\LeaveRejectedToStudent;
 use App\Mail\LeaveApprovedForYourRecords;
-use App\Mail\LeaveApprovedByFirstApproverToStudent; // <<< ADD THIS
-use App\Mail\NewLeaveRequestForYourApproval;
-
+use App\Mail\LeaveForwardedToNextApproverFromDsa; // If DSA can forward to another approver
 
 class DsaController extends Controller
 {
+    // ... index() method remains the same ...
     public function index()
     {
         $dsaUser = Auth::user();
@@ -39,14 +39,13 @@ class DsaController extends Controller
     public function approve(Request $request, $id)
     {
         $dsaUser = Auth::user();
-        // Eager load type, its workflows, student and student's department
         $leave = Leave::with('type.leaveWorkflows', 'student.department')->findOrFail($id);
 
         if ($leave->current_approver_role !== 'dsa' || $leave->overall_status !== 'awaiting_dsa_approval') {
             return redirect()->route('dsa.dashboard')->with('error', 'This leave request is not currently assigned to you.');
         }
 
-        $approvalRemarks = $request->input('approval_remarks', null);
+        $remarksFromForm = $request->input('remarks', null); // <<< Consistently use 'remarks'
 
         DB::beginTransaction();
         try {
@@ -56,7 +55,7 @@ class DsaController extends Controller
                 'acted_as_role' => 'dsa',
                 'workflow_step_number' => $leave->current_step_number,
                 'action_taken' => 'approved',
-                'remarks' => $approvalRemarks,
+                'remarks' => $remarksFromForm, // Use the remarks from the form
                 'action_at' => now(),
             ]);
 
@@ -64,10 +63,18 @@ class DsaController extends Controller
             $nextWorkflowStep = $leave->type->leaveWorkflows
                                       ->where('step_number', '>', $currentStepNumber)
                                       ->first();
-
             $message = '';
-            $sendToStakeholders = true; // Default to true
-            $isWeekendLeave = (strtolower($leave->type->name) === 'weekend leave'); // Check if it's weekend leave
+            $isWeekendLeave = (strtolower($leave->type->name) === 'weekend leave');
+            $sendToStakeholders = true; // Default to sending to general stakeholders
+
+            // Prepare Mailable instances
+            $studentMail = null;
+            $stakeholderMail = null;
+            $recordKeeperMail = null;
+            $nextApproverMailForStudent = null;
+            $nextApproverMailForNext = null;
+            $nextApproverEmails = [];
+
 
             if ($nextWorkflowStep) {
                 $leave->current_step_number = $nextWorkflowStep->step_number;
@@ -76,84 +83,77 @@ class DsaController extends Controller
                 if ($nextWorkflowStep->action_type === 'approval') {
                     $leave->overall_status = 'awaiting_' . strtolower($nextWorkflowStep->approver_role) . '_approval';
                     $message = 'Leave approved by DSA and forwarded to ' . Str::title(str_replace('_', ' ', $nextWorkflowStep->approver_role)) . ' for approval.';
-                    $sendToStakeholders = false; // Don't send final stakeholder email yet if forwarded
+                    $sendToStakeholders = false; // Don't send final stakeholder email yet
+
+                    $nextApproverMailForStudent = new LeaveForwardedToNextApproverFromDsa($leave, $nextWorkflowStep->approver_role, true);
+                    $nextApprovers = User::where('role', $nextWorkflowStep->approver_role)->get();
+                    foreach($nextApprovers as $nextApprover){ $nextApproverEmails[] = $nextApprover->email; }
+                    if(!empty($nextApproverEmails)){ $nextApproverMailForNext = new LeaveForwardedToNextApproverFromDsa($leave, $nextWorkflowStep->approver_role, false); }
+
                 } elseif ($nextWorkflowStep->action_type === 'record_keeping') {
                     $leave->overall_status = 'approved'; // Student sees this as approved
                     $message = 'Leave approved by DSA. Sent to ' . Str::title(str_replace('_', ' ', $nextWorkflowStep->approver_role)) . ' for record keeping.';
-                    // For Weekend Leave, stakeholders are skipped
-                    if ($isWeekendLeave) {
-                        $sendToStakeholders = false;
+                    if ($isWeekendLeave) { $sendToStakeholders = false; }
+
+                    $studentMail = new LeaveApprovedFinalToStudent($leave);
+                    if ($sendToStakeholders) { // General stakeholders only if not weekend leave
+                        $stakeholderMail = new LeaveApprovedToStakeholders($leave, $dsaUser);
+                    }
+                    // Always send to SSO (as record keeper) for any approved leave reaching this stage
+                    $ssoUsers = User::where('role', 'sso')->get(); // Assuming SSO is the role for $nextWorkflowStep
+                    if ($ssoUsers->isNotEmpty() && strtolower($nextWorkflowStep->approver_role) === 'sso') {
+                        $recordKeeperMail = new LeaveApprovedForYourRecords($leave, $dsaUser, 'sso');
                     }
                 }
-            } else {
-                // No more steps. DSA is the final decision-maker.
+            } else { // DSA is the final decision-maker
                 $leave->overall_status = 'approved';
                 $leave->current_approver_role = null;
-                $leave->final_remarks = $approvalRemarks;
+                $leave->final_remarks = $remarksFromForm;
                 $message = 'Leave approved by DSA (Final Approval).';
-                // For Weekend Leave, stakeholders are skipped
+                if ($isWeekendLeave) { $sendToStakeholders = false; }
+
+                $studentMail = new LeaveApprovedFinalToStudent($leave);
+                if ($sendToStakeholders) {
+                     $stakeholderMail = new LeaveApprovedToStakeholders($leave, $dsaUser);
+                }
+                // If it's weekend leave and DSA is final, still ensure SSO gets record keeping email
                 if ($isWeekendLeave) {
-                    $sendToStakeholders = false;
+                    $ssoUsers = User::where('role', 'sso')->get();
+                    if ($ssoUsers->isNotEmpty()) {
+                        $recordKeeperMail = new LeaveApprovedForYourRecords($leave, $dsaUser, 'sso');
+                    }
                 }
             }
             $leave->save();
             DB::commit();
 
-            // --- Send Emails (Outside DB Transaction) ---
+            // --- Email Sending Logic ---
             try {
-                // Email to Student (always, if approved or forwarded)
-                if ($leave->overall_status === 'approved' || Str::startsWith($leave->overall_status, 'awaiting_' . strtolower($nextWorkflowStep->approver_role ?? '') . '_record_keeping')) {
-                    Mail::to($leave->student->email)->send(new LeaveApprovedFinalToStudent($leave));
-                } elseif (Str::startsWith($leave->overall_status, 'awaiting_') && $nextWorkflowStep && $nextWorkflowStep->action_type === 'approval') {
-                    Mail::to($leave->student->email)->send(new LeaveForwardedToNextApproverFromDsa($leave, $nextWorkflowStep->approver_role, true));
-                }
+                if ($studentMail) { Mail::to($leave->student->email)->send($studentMail); }
+                if ($nextApproverMailForStudent) { Mail::to($leave->student->email)->send($nextApproverMailForStudent); }
 
-                // Email to General Stakeholders (conditionally)
-                if ($sendToStakeholders && ($leave->overall_status === 'approved' || Str::startsWith($leave->overall_status, 'awaiting_sso_record_keeping'))) {
+                if ($stakeholderMail) { // This already respects $sendToStakeholders flag internally
                     $stakeholderEmails = ['faculty_head@example.com', 'security_office@example.com']; // EXAMPLE
-                    // Note: SSO is NOT explicitly added here if they get a dedicated email below for non-weekend leaves
+                    // SSO already handled by recordKeeperMail logic or by being in $stakeholderEmails if desired
                     foreach ($stakeholderEmails as $email) {
-                        if(filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                           Mail::to($email)->send(new LeaveApprovedToStakeholders($leave, $dsaUser));
-                        }
+                        if(filter_var($email, FILTER_VALIDATE_EMAIL)) { Mail::to($email)->send($stakeholderMail); }
                     }
                 }
-
-                // Email to Next Approver (if forwarded for actual approval)
-                if ($nextWorkflowStep && $nextWorkflowStep->action_type === 'approval') {
-                    $nextApprovers = User::where('role', $nextWorkflowStep->approver_role)->get();
-                    foreach($nextApprovers as $nextApprover){
-                        if(filter_var($nextApprover->email, FILTER_VALIDATE_EMAIL)) {
-                            Mail::to($nextApprover->email)->send(new LeaveForwardedToNextApproverFromDsa($leave, $nextWorkflowStep->approver_role, false));
-                        }
-                    }
+                if ($recordKeeperMail) { // Send to SSO or other record keepers
+                    $ssoUsersToNotify = User::where('role', $nextWorkflowStep->approver_role ?? 'sso')->get();
+                    foreach($ssoUsersToNotify as $keeper){ Mail::to($keeper->email)->send($recordKeeperMail); }
                 }
-
-                // Email to Record Keeper (e.g., SSO), always if this step exists, or specifically for Weekend Leave
-                if ($nextWorkflowStep && $nextWorkflowStep->action_type === 'record_keeping' && strtolower($nextWorkflowStep->approver_role) === 'sso') {
-                    $ssoUsers = User::where('role', 'sso')->get();
-                    foreach($ssoUsers as $ssoUser){
-                         Mail::to($ssoUser->email)->send(new LeaveApprovedForYourRecords($leave, $dsaUser, 'sso'));
-                    }
-                } elseif ($isWeekendLeave && $leave->overall_status === 'approved' && (!$nextWorkflowStep || strtolower($nextWorkflowStep->approver_role ?? '') !== 'sso') ) {
-                    // This handles case where Weekend Leave might end with DSA and SSO is not explicitly the *next* step for record keeping
-                    // but should still be notified as the designated record keeper for approved weekend leaves.
-                    $ssoUsers = User::where('role', 'sso')->get();
-                     foreach($ssoUsers as $ssoUser){
-                         Mail::to($ssoUser->email)->send(new LeaveApprovedForYourRecords($leave, $dsaUser, 'sso'));
-                    }
+                if($nextApproverMailForNext && !empty($nextApproverEmails)){
+                    foreach($nextApproverEmails as $email){ if(filter_var($email, FILTER_VALIDATE_EMAIL)) { Mail::to($email)->send($nextApproverMailForNext); } }
                 }
-
-
             } catch (\Exception $e) {
                 Log::error("DSA Approve - Email sending failed for Leave ID {$id}: " . $e->getMessage());
             }
-
             return redirect()->route('dsa.dashboard')->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("DSA Approve Error for Leave ID {$id}: " . $e->getMessage());
+            Log::error("DSA Approve System Error for Leave ID {$id}: " . $e->getMessage());
             return redirect()->route('dsa.dashboard')->with('error', 'An error occurred while approving the leave: ' . $e->getMessage());
         }
     }
@@ -167,11 +167,9 @@ class DsaController extends Controller
             return redirect()->route('dsa.dashboard')->with('error', 'This leave request is not currently assigned to you.');
         }
 
-        $request->validate([
-            'remarks' => 'nullable|string|max:1000',
-        ]);
-
-        $rejectionRemarks = $request->input('remarks'); // Get remarks string
+        $rejectionRemarks = $request->input('remarks', null); // <<< Consistently 'remarks'
+        // Validate if remarks are mandatory for rejection
+        // $request->validate(['remarks' => 'required|string|max:1000']);
 
         DB::beginTransaction();
         try {
@@ -181,7 +179,7 @@ class DsaController extends Controller
                 'acted_as_role' => 'dsa',
                 'workflow_step_number' => $leave->current_step_number,
                 'action_taken' => 'rejected',
-                'remarks' => $request->input('remarks'),
+                'remarks' => $rejectionRemarks,
                 'action_at' => now(),
             ]);
 
@@ -189,45 +187,34 @@ class DsaController extends Controller
             $leave->final_remarks = $rejectionRemarks;
             $leave->current_approver_role = null;
             $leave->save();
-
             DB::commit();
 
             try {
-                // === CORRECTED MAILABLE CALL ===
-                // Pass the $dsaUser object as the second argument
-                // Pass the $rejectionRemarks string as the third argument
                 Mail::to($leave->student->email)->send(new LeaveRejectedToStudent($leave, $dsaUser, $rejectionRemarks));
             } catch (\Exception $e) {
-                Log::error("DSA Reject - Email sending failed for Leave ID {$id}: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+                Log::error("DSA Reject - Email to student failed: " . $e->getMessage());
             }
-
             return redirect()->route('dsa.dashboard')->with('success', 'Leave request rejected successfully.');
+
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("DSA Reject Error for Leave ID {$id}: " . $e->getMessage());
-            return redirect()->route('dsa.dashboard')->with('error', 'An error occurred while rejecting the leave: ' . $e->getMessage());
+            Log::error("DSA Reject System Error for Leave ID {$id}: " . $e->getMessage());
+            return redirect()->route('dsa.dashboard')->with('error', 'An error occurred while rejecting the leave.');
         }
     }
 
+    // ... approvedRecords() method (should be present from previous step) ...
     public function approvedRecords()
     {
         $dsaUser = Auth::user();
-
-        // Find leave_ids where this DSA took an 'approved' action
         $approvedLeaveIdsByDsa = LeaveRequestApproval::where('user_id', $dsaUser->id)
-            ->where('acted_as_role', 'dsa') // Ensure it was an action taken as DSA
+            ->where('acted_as_role', 'dsa')
             ->where('action_taken', 'approved')
-            ->pluck('leave_id')
-            ->unique();
-
-        // Fetch the actual Leave records for these IDs
-        // DSA typically sees leaves from all departments they've acted upon.
+            ->pluck('leave_id')->unique();
         $approvedLeaves = Leave::with(['student.department', 'type', 'approvalActions.user'])
             ->whereIn('id', $approvedLeaveIdsByDsa)
-            ->orderBy('updated_at', 'desc') // Show most recently actioned ones first
+            ->orderBy('updated_at', 'desc')
             ->paginate(15);
-
         return view('dsa.approved-records', compact('approvedLeaves', 'dsaUser'));
     }
-    
 }
