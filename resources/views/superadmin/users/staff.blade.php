@@ -1,16 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Manage All Users - Super Admin')
+@section('title', 'Manage Staff - Super Admin')
 
 @section('css')
 <style>
     .page-section-title { font-size: 1.75rem; font-weight: 600; color: #2c3e50; }
-    .custom-btn-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; line-height: 1.5; border-radius: 0.2rem; text-decoration: none; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease-in-out; }
-    .custom-btn-sm i.me-1 { margin-right: 0.3em; }
-    .custom-btn-info { color: #fff; background-color: #1abc9c; border-color: #1abc9c; }
-    .custom-btn-info:hover { background-color: #16a085; border-color: #148f77; }
-    .custom-btn-primary { color: #fff; background-color: #3498db; border-color: #3498db; }
-    .custom-btn-primary:hover { background-color: #2980b9; border-color: #217dbb; }
 
     /* ==================== MODIFIED CSS BLOCK START ==================== */
     /* Base style for action buttons */
@@ -18,7 +12,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 5px 10px; /* Slightly more padding for better look */
+        padding: 5px 10px;
         border-radius: 4px;
         font-size: 0.85rem;
         line-height: 1;
@@ -28,8 +22,8 @@
         vertical-align: middle;
         margin: 0;
         transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
-        border: 1px solid transparent; /* Border is set by specific color rules */
-        color: #fff; /* Text is white for both */
+        border: 1px solid transparent;
+        color: #fff;
     }
 
     /* Edit Button - Blue */
@@ -77,7 +71,7 @@
     .py-3 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
     .my-0 { margin-top: 0 !important; margin-bottom: 0 !important; }
     .pagination-wrapper .pagination { display: flex; padding-left: 0; list-style: none; }
-    .pagination-wrapper .page-item .page-link { padding: 0.375rem 0.75rem; margin-left: -1px; line-height: 1.25; color: #0d6efd; background-color: #fff; border: 1px solid #dee2e6; transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out; }
+    .pagination-wrapper .page-item .page-link { padding: 0.375rem 0.75rem; margin-left: -1px; line-height: 1.25; color: #0d6efd; background-color: #fff; border: 1px solid #dee2e6; }
     .pagination-wrapper .page-item:first-child .page-link { margin-left: 0; border-top-left-radius: 0.25rem; border-bottom-left-radius: 0.25rem; }
     .pagination-wrapper .page-item:last-child .page-link { border-top-right-radius: 0.25rem; border-bottom-right-radius: 0.25rem; }
     .pagination-wrapper .page-item.active .page-link { z-index: 3; color: #fff; background-color: #0d6efd; border-color: #0d6efd; }
@@ -90,15 +84,7 @@
 <div class="container mt-4">
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="page-section-title text-start mb-0">Manage All Users 👥</h1>
-        <div>
-            <a href="{{ route('superadmin.users.importForm') }}" class="custom-btn-sm custom-btn-info me-1">
-                <i class="fas fa-upload me-1"></i> Import Users
-            </a>
-            <a href="{{ route('superadmin.users.create') }}" class="custom-btn-sm custom-btn-primary">
-                <i class="fas fa-user-plus me-1"></i> Add New User
-            </a>
-        </div>
+        <h1 class="page-section-title text-start mb-0"><i class="fas fa-user-tie me-2"></i>Manage Staff</h1>
     </div>
 
     @if(session('success'))
@@ -115,11 +101,11 @@
     @endif
 
     <h3 class="mb-3 mt-4" style="font-weight: 600; color: #2980b9;">
-        <i class="fas fa-users me-2"></i> All Users List
+        <i class="fas fa-list me-2"></i> Staff List
     </h3>
 
     <div class="custom-table-wrapper">
-        <table id="usersTable" class="custom-data-table">
+        <table id="staffTable" class="custom-data-table">
             <thead>
                 <tr>
                     <th>Sl No.</th>
@@ -132,22 +118,23 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse ($users as $index => $user)
+                @forelse ($staffs as $index => $user)
                     <tr>
-                        <td>{{ $users->firstItem() + $index }}</td>
+                        <td>{{ $staffs->firstItem() + $index }}</td>
                         <td>{{ $user->name }}</td>
                         <td>{{ $user->email }}</td>
                         <td>{{ Str::title($user->role) }}</td>
                         <td>{{ $user->department->name ?? 'N/A' }}</td>
                         <td>{{ $user->created_at->format('d M Y, H:i') }}</td>
                         <td class="actions-cell text-center">
-                            <a href="{{ route('superadmin.users.edit', $user->id) }}" class="action-btn-exact edit-exact me-1" title="Edit User">
+                            {{-- MODIFIED HTML BLOCK --}}
+                            <a href="{{ route('superadmin.users.edit', $user->id) }}" class="action-btn-exact edit-exact me-1" title="Edit Staff Member">
                                 <i class="fas fa-edit me-1"></i> Edit
                             </a>
-                            <form action="{{ route('superadmin.users.destroy', $user->id) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.');">
+                            <form action="{{ route('superadmin.users.destroy', $user->id) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Are you sure you want to delete this staff member? This action cannot be undone.');">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="action-btn-exact delete-exact" title="Delete User">
+                                <button type="submit" class="action-btn-exact delete-exact" title="Delete Staff Member">
                                     <i class="fas fa-trash me-1"></i> Delete
                                 </button>
                             </form>
@@ -157,7 +144,7 @@
                     <tr>
                         <td colspan="7" class="text-center py-3">
                              <div class="custom-alert custom-alert-info my-0">
-                                No users found. You can add one using the button above.
+                                No staff members found.
                             </div>
                         </td>
                     </tr>
@@ -166,9 +153,9 @@
         </table>
     </div>
 
-    @if ($users->hasPages())
+    @if ($staffs->hasPages())
         <div class="mt-4 d-flex justify-content-center pagination-wrapper">
-            {{ $users->links() }}
+            {{ $staffs->links() }}
         </div>
     @endif
 </div>
@@ -176,25 +163,6 @@
 
 @section('js')
 <script>
-    var alertList = document.querySelectorAll('.custom-alert.alert-dismissible');
-    alertList.forEach(function (alert) {
-        var closeButton = alert.querySelector('.custom-alert-close');
-        if (closeButton) {
-            var bootstrapAlert = window.bootstrap?.Alert?.getInstance(alert);
-            if (!bootstrapAlert) {
-                closeButton.addEventListener('click', function () {
-                    var alertNode = this.closest('.custom-alert');
-                    if (alertNode) {
-                        alertNode.style.opacity = '0';
-                        setTimeout(function() {
-                           if (alertNode.parentNode) {
-                               alertNode.parentNode.removeChild(alertNode);
-                           }
-                        }, 150);
-                    }
-                });
-            }
-        }
-    });
+    // JS for alert dismissal
 </script>
 @endsection

@@ -69,7 +69,7 @@
             @if($leave->document)
             <tr><th>Supporting Document:</th><td>Available on Portal (Filename: {{ basename($leave->document) }})</td></tr>
             @endif
-        </table>
+        </table><br><br><br>
 
         <h2 class="section-heading">Approval History</h2>
         @if($leave->approvalActions->isNotEmpty())

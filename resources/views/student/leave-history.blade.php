@@ -5,20 +5,20 @@
 @section('content')
 <div class="container mt-4"> {{-- Bootstrap container is fine --}}
     {{-- Use your custom page title class if desired, or style h2 directly --}}
-    <h2 class="page-section-title">Applied Leave Status</h2> {{-- Example: Using custom title --}}
+    <h2 class="page-section-title">Applied Leave Status📝</h2> {{-- Example: Using custom title --}}
 
     @if (session('success'))
         {{-- Use your custom alert classes --}}
         <div class="custom-alert custom-alert-success" role="alert">
             {{ session('success') }}
-            <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close">×</button> {{-- Assuming you want Bootstrap's JS to close it, or style your own close button --}}
+            <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close"></button> {{-- Assuming you want Bootstrap's JS to close it, or style your own close button --}}
         </div>
     @endif
     @if (session('error'))
         {{-- Use your custom alert classes --}}
         <div class="custom-alert custom-alert-danger" role="alert">
             {{ session('error') }}
-            <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close">×</button>
+            <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 

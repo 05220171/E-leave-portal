@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About E-Leave Portal</title>
+  <style>
+    body {
+      font-family: 'Times New Roman', serif;
+      margin: 40px;
+      background-color: #fff;
+      color: #333;
+      position: relative;
+    }
+
+    .container {
+      display: flex;
+      align-items: flex-start;
+      gap: 40px;
+    }
+
+    .image-section {
+      flex: 1;
+    }
+
+    .image-section img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+
+    .text-section {
+      flex: 1.2;
+      font-size: 16px;
+      line-height: 1.8;
+    }
+
+    .text-section p {
+      text-align: justify;
+      margin-bottom: 20px;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      font-size: 14px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      color: white;
+    }
+
+    .back-btn {
+      background-color: #4CAF50;
+    }
+
+    .download-btn {
+      background-color: #007BFF;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+      .button-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+<h2>Want to know more about this website? </h2>
+<div class="container">
+  <div class="image-section">
+    <img src="/assets/img/pic.jpg" alt="E-Leave Portal Screenshot">
+  </div>
+  <div class="text-section">
+    <p>
+      <strong>E-Leave Portal</strong> is an online platform designed to automate the student leave application process. It allows students to apply for leave through the website, track the status of their applications, view leave history, and receive automatic notifications regarding their leave status. The portal also alerts the relevant departments such as the DSA, HOD, and SSO for timely leave approvals or rejections. In addition, the system includes features like leave categorization into emergency or regular types, thereby enhancing the overall leave management experience in terms of speed, efficiency, and transparency.
+    </p>
+    <p>
+      The current leave system in many institutions remains largely manual, requiring students to fill out physical forms and submit them in person to various authorities. This outdated process contributes to delays, lost applications, and miscommunication between students and staff, leading to inefficiencies and a lack of accountability. Such procedural drawbacks hinder the institution’s ability to process leave requests systematically, ultimately affecting academic planning and operational effectiveness.
+    </p>
+  </div>
+</div>
+
+<div class="button-container">
+  <button class="btn back-btn" onclick="location.href='/'">← Go Back</button>
+</div>
+
+</body>
+</html>

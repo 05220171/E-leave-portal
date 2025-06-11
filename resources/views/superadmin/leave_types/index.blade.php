@@ -15,13 +15,13 @@
     @if(session('success'))
         <div class="custom-alert custom-alert-success" role="alert"> {{-- Custom alert --}}
             {{ session('success') }}
-            <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close">×</button>
+            <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
     @if(session('error'))
         <div class="custom-alert custom-alert-danger" role="alert"> {{-- Custom alert --}}
             {{ session('error') }}
-            <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close">×</button>
+            <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
@@ -34,7 +34,7 @@
         <table class="custom-data-table" id="leaveTypesTable"> {{-- Your custom data table class --}}
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>SL No.</th>
                     <th>Name</th>
                     <th>Description</th>
                     <th>Status</th>

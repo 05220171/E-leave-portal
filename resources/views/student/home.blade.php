@@ -161,7 +161,7 @@
         <span class="subhead">Welcome to JNEC E-Leave Portal</span>
         <!-- This h1 is now styled to be small and italic -->
         <h1 class="display-4">Your convenient solution for managing leave requests.</h1>
-        <a href="/html/index.html" class="btn btn-primary">Get Started</a>
+        <a href="/html/started.html" class="btn btn-primary">Get Started</a>
       </div>
     </div>
   </div>
@@ -214,10 +214,10 @@
       <!-- ... content ... -->
        <div class="container text-center">
         <h2 class="mb-4"><b>Services Offered</b></h2>
-            <br><strong>Digital Leave Application:</strong> Students can easily submit leave requests online, specifying leave type (regular or emergency), dates, and reasons.
+            <br><strong>Digital Leave Application:</strong> Students can easily submit leave requests online, specifying leave type, dates, and reasons.
 
              <br><strong>Leave Status Tracking:</strong> Students can view the real-time status of their applications, including approvals and rejections.
-             <br><strong>Automated Notifications:</strong>  Instant alerts keep users informed about leave statuses, timetable updates, and attendance warnings.
+             <br><strong>Automated Notifications:</strong>  Instant alerts keep users informed about leave statuses and leave history.
               <br><strong>Leave History Records:</strong> Maintains detailed logs of all past leave applications for students and staff reference.
       </div></p>
       </div>
@@ -228,7 +228,7 @@
         <h2 class="mb-4"><b>System Overview</b></h2>
         <p> <h3>Why Choose Us?</h3>
           <br><strong>Efficient Leave Management:</strong> Apply, track, and manage leave applications with ease.
-             <br><strong>Attendance Tracking:</strong> Stay updated with your attendance status, with notifications to keep you on track.
+             <br><strong>Admin Privileges:</strong>Our website empowers administrators to manage users,departments and maintain students leave records to keep you on track.
              <br><strong>Seamless Integration:</strong> Our platform integrates with existing systems to make leave approvals, tracking, and notifications easier.
               <br><strong>User-Centered Design:</strong> We’ve designed the portal with students, faculty, and administrators in mind, ensuring an intuitive user experience.
 

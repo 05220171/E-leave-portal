@@ -11,9 +11,9 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
   {{-- Main Custom Stylesheet --}}
-  <link rel="stylesheet" href="{{ asset('css/student.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/student.css') }}"> {{-- Ensure sidebar CSS is in here or linked separately --}}
 
-  {{-- Font Awesome for icons (if used across the site) --}}
+  {{-- Font Awesome for icons --}}
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
   {{-- For page-specific styles --}}
@@ -35,7 +35,7 @@
       @elseif($userRole == 'sso')
         @include('sso.sidebar')
       @elseif($userRole == 'admin') {{-- Assuming 'admin' is the role for superadmin --}}
-        @include('superadmin.sidebar')
+        @include('superadmin.sidebar') {{-- This will now include the dropdown sidebar --}}
       @endif
     @endauth
 
@@ -49,6 +49,44 @@
 
   {{-- Page-specific scripts --}}
   @yield('js')
+
+  {{-- Sidebar Dropdown JavaScript --}}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var dropdownToggles = document.querySelectorAll('.sidebar .dropdown-toggle');
+
+        dropdownToggles.forEach(function (toggle) {
+            toggle.addEventListener('click', function () {
+                var parentLi = this.closest('.sidebar-dropdown');
+                var submenu = parentLi.querySelector('.sidebar-submenu');
+
+                if (parentLi.classList.contains('open')) {
+                    submenu.style.display = 'none';
+                    parentLi.classList.remove('open');
+                } else {
+                    // Optional: Close other open dropdowns
+                    document.querySelectorAll('.sidebar-dropdown.open').forEach(function(openDropdown) {
+                        if (openDropdown !== parentLi) {
+                            openDropdown.classList.remove('open');
+                            openDropdown.querySelector('.sidebar-submenu').style.display = 'none';
+                        }
+                    });
+                    submenu.style.display = 'block';
+                    parentLi.classList.add('open');
+                }
+            });
+        });
+
+        // Ensure currently active dropdown stays open on page load
+        var activeDropdown = document.querySelector('.sidebar-dropdown.active.open');
+        if (activeDropdown) {
+            var submenu = activeDropdown.querySelector('.sidebar-submenu');
+            if (submenu) {
+                submenu.style.display = 'block';
+            }
+        }
+    });
+  </script>
 
 </body>
 </html>

@@ -2,11 +2,47 @@
 
 @section('title', 'Create New User')
 
+{{-- 
+    MODIFICATION 1: 
+    THIS IS THE REAL FIX. We are changing @section('css') to @push('styles')
+    so that the styles are correctly injected into your layout file.
+--}}
+@push('styles')
+<style>
+    /* 
+     * This CSS block will now be correctly loaded.
+     * It targets ANY element with the class "btn" inside the card footer
+     * and forces them to have the same blue style.
+    */
+    .card .card-footer .btn {
+        background-color: #3498db !important; /* Blue color */
+        border-color: #3498db !important;
+        color: #fff !important;               /* White text */
+        padding: 10px 15px !important;        /* Consistent padding */
+        text-decoration: none !important;     /* Removes underline from links */
+        border-radius: 4px !important;
+        border: none !important;
+    }
+
+    .card .card-footer .btn:hover {
+        background-color: #2980b9 !important; /* Darker blue on hover */
+        border-color: #2980b9 !important;
+        color: #fff !important;
+    }
+    
+    /* This removes the extra top margin that student.css adds to buttons */
+    .card-footer button.btn {
+        margin-top: 0 !important;
+    }
+</style>
+@endpush
+
+
 @section('content_header')
     <div class="container-fluid pt-4">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0 text-dark">Create New User</h1>
+                <h1 class="m-0 text-dark">Create New User 👤</h1>
             </div>
         </div>
     </div>
@@ -65,8 +101,7 @@
                                 <option value="hod" {{ old('role') == 'hod' ? 'selected' : '' }}>HOD</option>
                                 <option value="dsa" {{ old('role') == 'dsa' ? 'selected' : '' }}>DSA</option>
                                 <option value="sso" {{ old('role') == 'sso' ? 'selected' : '' }}>SSO</option>
-                                <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
-                                <option value="superadmin" {{ old('role') == 'superadmin' ? 'selected' : '' }}>Super Admin</option>
+                               
                             </select>
                             @error('role')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -92,7 +127,7 @@
                         {{-- Student Specific Fields --}}
                         <div id="student-fields" style="{{ old('role') == 'student' ? 'display: block;' : 'display: none;' }}">
                             <hr>
-                            <p class="text-muted">Student Specific Information:</p>
+                            <p class="text-muted"></p>
 
                             {{-- Program Dropdown --}}
                             <div class="form-group">
@@ -120,8 +155,9 @@
                         </div>
                     </div>
                     <div class="card-footer">
-                        <button type="submit" class="btn btn-primary">Create User</button>
-                        <a href="{{ route('superadmin.users.index') }}" class="btn btn-secondary ml-2">Cancel</a>
+                        {{-- MODIFICATION 2: Removed specific color classes so our new CSS can take over --}}
+                        <button type="submit" class="btn">Create User</button>
+                        <a href="{{ route('superadmin.users.index') }}" class="btn ml-2">Cancel</a>
                     </div>
                 </form>
             </div>

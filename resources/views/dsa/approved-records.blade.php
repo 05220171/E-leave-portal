@@ -58,10 +58,14 @@
                             <td>{{ $leave->student->name ?? 'N/A' }}</td>
                             <td>{{ $leave->student->department->name ?? 'N/A' }}</td>
                             <td>{{ $leave->type->name ?? 'N/A' }}</td>
+                            
+                            {{-- MODIFIED SECTION START --}}
                             <td>
                                 {{ $leave->start_date->format('d M Y') }}
-                                <small class="text-muted d-block">to {{ $leave->end_date->format('d M Y') }}</small>
+                                <div>to {{ $leave->end_date->format('d M Y') }}</div>
                             </td>
+                            {{-- MODIFIED SECTION END --}}
+
                             <td>{{ $leave->number_of_days ?? 'N/A' }}</td>
                             <td>
                                 <span title="{{ $leave->reason }}">{{ Str::limit($leave->reason, 30) }}</span>

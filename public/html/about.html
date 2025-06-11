@@ -2,68 +2,259 @@
 <html lang="en">
 <head>
   <style>
-.designer-title {
-  text-align: center;
-}
-</style>
+    /* General body styling */
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding-top: 70px;
+    }
+
+    /* Back Button Styling */
+    .back-button-container {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      z-index: 1000;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 15px;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #fff;
+      background-color: #6c757d;
+      border: none;
+      border-radius: 5px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn-back:hover {
+      background-color: #5a6268;
+    }
+
+    .btn-back .arrow {
+      margin-right: 8px;
+      font-size: 1.2rem;
+    }
+
+    /* --- Image Animation: Bounce-In --- */
+    @keyframes bounceIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.3) translateY(600px);
+      }
+      60% {
+        opacity: 1;
+        transform: scale(1.05) translateY(-25px);
+      }
+      80% {
+        transform: scale(0.95) translateY(10px);
+      }
+      100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* "Our Team" Image Styling & Animation */
+    .team-image-container {
+        text-align: center;
+        margin-bottom: 10px;
+        overflow: hidden;
+    }
+    .team-image-container img {
+        max-width: 100%;
+        height: auto;
+        max-height: 400px;
+        display: inline-block;
+        border-radius: 8px;
+        opacity: 0;
+        transition: transform 0.3s ease-in-out;
+    }
+    .team-image-container img.animate-on-scroll {
+        animation: bounceIn 1s ease-out forwards;
+    }
+    .team-image-container img:hover {
+        transform: scale(1.05);
+    }
+
+    /* "Project Guide" Images Styling & Animation */
+    .guide-images-container {
+        display: flex;
+        justify-content: space-around;
+        align-items: stretch; /* Important for wrappers to have same perceived height if needed */
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    .guide-image-wrapper {
+      text-align: center;
+      margin: 10px;
+      width: 200px;
+      height: 300px; /* Fixed height for the entire card */
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid #eee; /* Optional: visualize wrapper */
+      border-radius: 8px;    /* Optional: round wrapper */
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Optional */
+    }
+    .guide-image-wrapper img {
+      width: 100%;
+      height: 240px;   /* Fixed height for the image portion */
+      object-fit: cover;
+      border-top-left-radius: 7px; /* Match wrapper radius */
+      border-top-right-radius: 7px;/* Match wrapper radius */
+      display: block;
+      opacity: 0;
+      transition: transform 0.3s ease-in-out;
+    }
+
+    .guide-image-wrapper img.bounce-in-visible {
+      animation: bounceIn 1s ease-out forwards;
+    }
+    .guide-images-container .guide-image-wrapper:nth-child(1) img.bounce-in-visible {
+      animation-delay: 0.2s;
+    }
+    .guide-images-container .guide-image-wrapper:nth-child(2) img.bounce-in-visible {
+      animation-delay: 0.4s;
+    }
+    .guide-image-wrapper img:hover {
+      transform: scale(1.05);
+    }
+
+    .guide-image-wrapper p {
+      margin: 0;
+      padding: 10px 5px;
+      font-style: italic;
+      font-size: 0.9em;
+      color: #555;
+      width: 100%;
+      line-height: 1.3;
+      flex-grow: 1; /* Takes up remaining space in the flex column */
+      display: flex;
+      align-items: center; /* Vertically center text in its allocated space */
+      justify-content: center; /* Horizontally center text */
+      box-sizing: border-box;
+    }
+
+    /* Other styles */
+    .designer-title { text-align: center; }
+    .page-section { padding: 20px 0; }
+    .container { width: 90%; max-width: 1140px; margin: 0 auto; }
+    .row { display: flex; flex-wrap: wrap; margin-right: -15px; margin-left: -15px; }
+    .justify-content-center { justify-content: center !important; }
+    .col-lg-8 {
+        flex: 0 0 66.666667%;
+        max-width: 66.666667%;
+        padding-right: 15px;
+        padding-left: 15px;
+    }
+    .text-center { text-align: center !important; }
+    .mb-3 { margin-bottom: 1rem !important; }
+    .text-lg p { line-height: 1.6; margin-bottom: 1rem; }
+  </style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-
   <meta name="copyright" content="MACode ID, https://macodeid.com/">
-
-  <title>JNEC E-Leave-Portal</title>
-
-  
-  
+  <title>JNEC E-Leave-Portal - About</title>
 </head>
 <body>
 
-  <!-- Back to top button -->
-  <div class="back-to-top"></div>
-
-
-
-  
-
-        
-
-      
-
-  <div class="button-container">
-    <button class="btn back-btn" onclick="location.href='/'">Go Back</button>
+  <div class="back-button-container">
+    <a href="/" class="btn-back">
+      <span class="arrow">←</span> Go Back
+    </a>
   </div>
-     
-
- 
-        
-      </div> <!-- .container -->
-    </div> <!-- .banner-section -->
-  </div> <!-- .page-banner -->
-
- 
 
   <div class="page-section">
     <div class="container">
       <div class="row justify-content-center">
-        <div class="col-lg-8 wow fadeInUp">
-          <h1 class="text-center mb-3">Our team</h1>
+        <div class="col-lg-8">
+          <h1 class="text-center mb-3">Our Team</h1>
           <div class="text-lg">
-            <img src="/assets/img/us.jpg" alt="Rinchen and Karma" style="max-width: 500px; height: auto; display: block; margin-left: auto; margin-right: auto;">
+            <div class="team-image-container">
+                <img src="/assets/img/us.jpg" alt="Rinchen and Karma">
+            </div>
             <p class="designer-title"><strong>Rinchen Dem & Karma Deejay Tshomo</strong></p><br>
             <p>The JNEC E-Leave Portal was developed in 2025 by two students of Jigme Namgyel Engineering college, pursuing their diploma in computer system and network in final year. They are passionate about crafting student-focused digital platforms that streamline processes and create positive experiences.</p>
             <p> Driven by a desire to apply their technical skills to solve a real-world challenge within their own college community, they undertook the development of this E-Leave system. Their vision was to create a centralized, accessible platform that reduces administrative overhead and provides a clear, reliable way for students and staffs to manage their leave requirements.Rinchen and Karma hope this website proves valuable to the JNEC community.</p>
           </div>
         </div>
-        
+      </div>
 
-          
-   <!-- .banner-home -->
+      <hr style="margin: 40px 0;">
 
- 
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <h1 class="text-center mb-3">Project Guide</h1>
+          <div class="text-lg">
+            <div class="guide-images-container">
+              <div class="guide-image-wrapper">
+                <img src="/assets/img/yt.jpg" alt="Project Guide YT">
+                <p>Mr. Yonten Tshering </p>
+              </div>
+              <div class="guide-image-wrapper">
+                <img src="/assets/img/rt.jpg" alt="Project Guide RT">
+                <p>Mr. Rinchen Tobgay</p>
+              </div>
+            </div>
+            <p><strong>Guidance and Mentorship:</strong></p>
+            <p>This project was developed under the invaluable guidance and mentorship of Mr. Yonten Tshering and Mr. Rinchen Tobgay, esteemed lecturers at Jigme Namgyel Engineering College. Their expertise in software development, project management, and keen understanding of the college's operational needs were instrumental throughout the entire development lifecycle.</p>
+            <p>Mr. Younten Tshering played a key role in overall shaping the project's scope and features, aligning them with the practical requirements of an effective e-leave system. His encouragement and problem-solving support were crucial in overcoming technical challenges and keeping the project on track.</p>
+            <p>Mr. Rinchen Tobgay provided critical insights into system architecture and database design, ensuring the portal's robustness and scalability. His continuous feedback on user interface and experience helped refine the platform to be intuitive and user-friendly for both students and staff.</p>
+            <p>The development team is profoundly grateful for their dedication, patience, and the countless hours they invested in guiding this project to fruition. Their mentorship not only contributed to the success of the JNEC E-Leave Portal but also provided an enriching learning experience for the student developers.</p>
+          </div>
+        </div>
+      </div>
 
+    </div>
+  </div>
 
-  
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const animationOptions = {
+        root: null,
+        rootMargin: '0px 0px -50px 0px',
+        threshold: 0.1
+    };
+
+    const teamImage = document.querySelector('.team-image-container img');
+    if (teamImage) {
+        const teamImageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-on-scroll');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, animationOptions);
+        teamImageObserver.observe(teamImage);
+    }
+
+    const guideImages = document.querySelectorAll('.guide-image-wrapper img');
+    if (guideImages.length > 0) {
+        const guideImageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('bounce-in-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, animationOptions);
+
+        guideImages.forEach(image => {
+            guideImageObserver.observe(image);
+        });
+    }
+});
+</script>
+
 </body>
 </html>

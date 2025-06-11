@@ -6,15 +6,15 @@ use App\Models\User;
 use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Maatwebsite\Excel\Facades\Excel; // Import Excel Facade
-use App\Imports\UsersImport;        // Import your UsersImport class
-use Illuminate\Support\Facades\DB;   // For database transactions
-use Maatwebsite\Excel\Validators\ValidationException as ExcelValidationException; // To catch Excel validation exceptions
-use Illuminate\Support\Facades\Log; // For logging general exceptions
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\UsersImport;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Validators\ValidationException as ExcelValidationException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
-use App\Http\Requests\StoreUserRequest; // <--- This line IMPORTS the class that DOES the validation
-use App\Http\Requests\UpdateUserRequest; // <--- This line IMPORTS the class that DOES the validation
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 
 class SuperAdminController extends Controller
 {
@@ -31,13 +31,36 @@ class SuperAdminController extends Controller
         return view('superadmin.users.index', compact('users'));
     }
 
-    public function create()
+    /**
+     * Display a listing of all students.
+     */
+    public function manageStudents()
     {
-        $departments = Department::orderBy('name')->get(); // Fetch all departments, optionally order them
-        // No $programOptions or $classOptions are passed here for AJAX dependent dropdowns
-        return view('superadmin.create-user', compact('departments'));
+        $students = User::where('role', 'student')
+                        ->with('department') // Eager load department
+                        ->latest()
+                        ->paginate(15);
+        return view('superadmin.users.students', compact('students'));
     }
 
+    /**
+     * Display a listing of all staff members (hod, dsa, sso, admin).
+     */
+    public function manageStaffs()
+    {
+        $staffRoles = ['hod', 'dsa', 'sso', 'admin']; // Define staff roles
+        $staffs = User::whereIn('role', $staffRoles)
+                      ->with('department') // Eager load department
+                      ->latest()
+                      ->paginate(15);
+        return view('superadmin.users.staff', compact('staffs'));
+    }
+
+    public function create()
+    {
+        $departments = Department::orderBy('name')->get();
+        return view('superadmin.create-user', compact('departments'));
+    }
 
     public function store(StoreUserRequest $request)
     {
@@ -49,27 +72,24 @@ class SuperAdminController extends Controller
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
             'department_id' => $validated['department_id'],
-            'program' => $validated['role'] === 'student' ? $validated['program'] : null, // 'program' here will be the program CODE
-            'class' => $validated['role'] === 'student' ? $validated['class'] : null,     // 'class' here will be the class CODE
+            'program' => $validated['role'] === 'student' ? $validated['program'] : null,
+            'class' => $validated['role'] === 'student' ? $validated['class'] : null,
             'email_verified_at' => now(),
         ]);
 
         return redirect()->route('superadmin.users.index')->with('success', 'User created successfully.');
     }
 
-    public function edit(User $user) // User $user for route model binding
+    public function edit(User $user)
     {
         $departments = Department::all();
+        // These role lists might be useful if you build a more dynamic role assignment in edit form
         $assignableSystemRoles = ['dsa', 'sso', 'daa', 'president', 'admin', 'superadmin'];
         $departmentSpecificRoles = ['hod', 'student'];
 
         return view('superadmin.edit-user', compact('user', 'departments', 'assignableSystemRoles', 'departmentSpecificRoles'));
     }
 
-
-    /**
-     * Update the specified user in storage.
-     */
     public function update(UpdateUserRequest $request, User $user)
     {
         $validated = $request->validated();
@@ -83,7 +103,7 @@ class SuperAdminController extends Controller
             'class' => $validated['role'] === 'student' ? $validated['class'] : null,
         ];
 
-        if (isset($validated['password'])) {
+        if (isset($validated['password']) && !empty($validated['password'])) { // Check if password is provided and not empty
             $userData['password'] = Hash::make($validated['password']);
         }
 
@@ -98,17 +118,11 @@ class SuperAdminController extends Controller
         return redirect()->route('superadmin.users.index')->with('success', 'User deleted successfully.');
     }
 
-    /**
-     * Show the form for importing users.
-     */
     public function importForm()
     {
         return view('superadmin.users.import-form');
     }
 
-    /**
-     * Handle the import of users from an Excel file.
-     */
     public function import(Request $request)
     {
         $request->validate([

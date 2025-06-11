@@ -1,12 +1,11 @@
 @extends('layouts.app') {{-- Your main application layout --}}
-
 @section('content')
 <div class="container mt-4"> {{-- Assuming Bootstrap for main content styling --}}
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="mb-0">Apply for Leave</h2>
+                    <h2 class="mb-0">Apply for Leave✍️</h2>
                 </div>
                 <div class="card-body">
                     {{-- Display Session Success/Error Messages --}}
@@ -22,7 +21,6 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     @endif
-
                     {{-- Display Validation Errors --}}
                     @if ($errors->any())
                         <div class="alert alert-danger">
@@ -39,12 +37,18 @@
                         @csrf
 
                         <div class="mb-3 form-group">
-                            <label for="leave_type_id" class="form-label">Leave Type: <span class="text-danger">*</span></label>
+                            <label for="leave_type_id" class="form-label">Leave Type: <span class="text-danger"></span></label>
                             <select name="leave_type_id" id="leave_type_id" required class="form-select @error('leave_type_id') is-invalid @enderror">
                                 <option value="">-- Select Leave Type --</option>
+                                @php
+                                    // CORRECTED: Matches database value "Weekend leave"
+                                    $weekendLeaveTypeName = 'Weekend leave';
+                                @endphp
                                 @if(isset($activeLeaveTypes) && $activeLeaveTypes->count() > 0)
                                     @foreach($activeLeaveTypes as $type)
-                                        <option value="{{ $type->id }}" {{ old('leave_type_id') == $type->id ? 'selected' : '' }}>
+                                        <option value="{{ $type->id }}"
+                                                {{ old('leave_type_id') == $type->id ? 'selected' : '' }}
+                                                data-leave-type-name="{{ $type->name }}"> {{-- Pass name for JS --}}
                                             {{ $type->name }}
                                         </option>
                                     @endforeach
@@ -57,10 +61,16 @@
                             @enderror
                         </div>
 
+                        {{-- Note for Weekend Leave --}}
+                        <div id="weekend_leave_note" class="alert alert-info" style="display: none;">
+                            <strong>Note:</strong> Weekend leave should only be on Saturdays and Sundays.
+                        </div>
+
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3 form-group">
-                                    <label for="from_date" class="form-label">Start Date: <span class="text-danger">*</span></label>
+                                    <label for="from_date" class="form-label">Start Date: <span class="text-danger"></span></label>
                                     <input type="date" name="from_date" id="from_date" value="{{ old('from_date') }}" required class="form-control @error('from_date') is-invalid @enderror">
                                     @error('from_date')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -69,7 +79,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3 form-group">
-                                    <label for="to_date" class="form-label">End Date: <span class="text-danger">*</span></label>
+                                    <label for="to_date" class="form-label">End Date: <span class="text-danger"></span></label>
                                     <input type="date" name="to_date" id="to_date" value="{{ old('to_date') }}" required class="form-control @error('to_date') is-invalid @enderror">
                                     @error('to_date')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -79,12 +89,12 @@
                         </div>
 
                         <div class="mb-3 form-group">
-                            <label for="leave_days" class="form-label">Number of Working Days:</label>
-                            <input type="text" id="leave_days" name="leave_days" readonly class="form-control bg-light"> {{-- bg-light for readonly appearance --}}
+                            <label for="leave_days" class="form-label">Number of Days:</label>
+                            <input type="text" id="leave_days" name="leave_days" readonly class="form-control bg-light">
                         </div>
 
                         <div class="mb-3 form-group">
-                            <label for="reason" class="form-label">Reason: <span class="text-danger">*</span></label>
+                            <label for="reason" class="form-label">Reason: <span class="text-danger"></span></label>
                             <textarea name="reason" id="reason" rows="4" required class="form-control @error('reason') is-invalid @enderror">{{ old('reason') }}</textarea>
                             @error('reason')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -100,9 +110,8 @@
                             @enderror
                         </div>
 
-                        <div class="form-actions mt-4 text-center"> {{-- Your styling class for actions --}}
+                        <div class="form-actions mt-4 text-center">
                             <button type="submit" class="btn btn-primary px-4">Submit Leave Request</button>
-                            {{-- Or use your custom classes: class="card-button button-apply" --}}
                         </div>
                     </form>
                 </div> {{-- card-body --}}
@@ -112,44 +121,95 @@
 </div> {{-- container --}}
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const fromDateInput = document.getElementById('from_date');
-        const toDateInput = document.getElementById('to_date');
-        const leaveDaysOutput = document.getElementById('leave_days');
+document.addEventListener('DOMContentLoaded', function () {
+    const leaveTypeSelect = document.getElementById('leave_type_id');
+    const fromDateInput = document.getElementById('from_date');
+    const toDateInput = document.getElementById('to_date');
+    const leaveDaysOutput = document.getElementById('leave_days');
+    const weekendLeaveNote = document.getElementById('weekend_leave_note');
 
-        function calculateWorkingDays() {
-            const startDateString = fromDateInput.value;
-            const endDateString = toDateInput.value;
+    // CORRECTED: This will now be "Weekend leave" due to the @php block change
+    const WEEKEND_LEAVE_TYPE_NAME = "{{ $weekendLeaveTypeName }}";
 
-            if (startDateString && endDateString) {
-                const start = new Date(startDateString);
-                const end = new Date(endDateString);
-                let workingDays = 0;
+    let isWeekendLeaveSelected = false;
 
-                if (end >= start) {
-                    let currentDate = new Date(start.getTime()); // Use getTime() for reliable date copying for iteration
-                    while (currentDate <= end) {
-                        const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
-                        if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Exclude Sunday and Saturday
-                            workingDays++;
+    function isWeekend(date) {
+        const day = date.getDay();
+        return day === 0 || day === 6; // 0 = Sunday, 6 = Saturday
+    }
+
+    function validateDateInputForWeekend(dateInput) {
+        if (!isWeekendLeaveSelected || !dateInput.value) return true;
+
+        const selectedDate = new Date(dateInput.value + 'T00:00:00');
+        if (!isWeekend(selectedDate)) {
+            alert('For Weekend Leave, please select only Saturdays or Sundays.');
+            dateInput.value = '';
+            calculateAndDisplayDays();
+            return false;
+        }
+        return true;
+    }
+
+    function calculateAndDisplayDays() {
+        const startDateString = fromDateInput.value;
+        const endDateString = toDateInput.value;
+        leaveDaysOutput.value = '';
+
+        if (startDateString && endDateString) {
+            const start = new Date(startDateString + 'T00:00:00');
+            const end = new Date(endDateString + 'T00:00:00');
+            let countedDays = 0;
+
+            if (end >= start) {
+                let currentDate = new Date(start.getTime());
+                while (currentDate <= end) {
+                    if (isWeekendLeaveSelected) {
+                        if (isWeekend(currentDate)) {
+                            countedDays++;
                         }
-                        currentDate.setDate(currentDate.getDate() + 1);
+                    } else {
+                        if (!isWeekend(currentDate)) {
+                            countedDays++;
+                        }
                     }
-                    leaveDaysOutput.value = workingDays > 0 ? workingDays : ''; // Show empty if 0 for clarity, or just workingDays
-                } else {
-                    leaveDaysOutput.value = ''; // Or an error message, or 0
+                    currentDate.setDate(currentDate.getDate() + 1);
                 }
-            } else {
-                leaveDaysOutput.value = ''; // Or 0
+                leaveDaysOutput.value = countedDays > 0 ? countedDays : '';
             }
         }
+    }
 
-        if (fromDateInput && toDateInput && leaveDaysOutput) {
-            fromDateInput.addEventListener('change', calculateWorkingDays);
-            toDateInput.addEventListener('change', calculateWorkingDays);
-            // Initial calculation if dates might be pre-filled (e.g., from old input on validation error)
-            calculateWorkingDays();
+    function handleLeaveTypeChange() {
+        const selectedOption = leaveTypeSelect.options[leaveTypeSelect.selectedIndex];
+        const selectedLeaveTypeName = selectedOption.dataset.leaveTypeName; // This comes directly from DB via $type->name
+
+        // Case-insensitive comparison for robustness, though WEEKEND_LEAVE_TYPE_NAME should now match exactly
+        isWeekendLeaveSelected = (selectedLeaveTypeName && selectedLeaveTypeName.toLowerCase() === WEEKEND_LEAVE_TYPE_NAME.toLowerCase());
+
+        if (isWeekendLeaveSelected) {
+            weekendLeaveNote.style.display = 'block';
+            if (fromDateInput.value) validateDateInputForWeekend(fromDateInput);
+            if (toDateInput.value) validateDateInputForWeekend(toDateInput);
+        } else {
+            weekendLeaveNote.style.display = 'none';
         }
-    });
+        calculateAndDisplayDays();
+    }
+
+    if (leaveTypeSelect && fromDateInput && toDateInput && leaveDaysOutput && weekendLeaveNote) {
+        leaveTypeSelect.addEventListener('change', handleLeaveTypeChange);
+        fromDateInput.addEventListener('change', () => {
+            validateDateInputForWeekend(fromDateInput);
+            calculateAndDisplayDays();
+        });
+        toDateInput.addEventListener('change', () => {
+            validateDateInputForWeekend(toDateInput);
+            calculateAndDisplayDays();
+        });
+
+        handleLeaveTypeChange();
+    }
+});
 </script>
 @endsection

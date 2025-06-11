@@ -6,7 +6,7 @@
 @section('content')
 <div class="container mt-4"> {{-- Bootstrap container is fine, or use your own custom container if defined --}}
     {{-- Use your custom page title class --}}
-    <h2 class="page-section-title">Approved Leave Records & Certificates</h2>
+    <h2 class="page-section-title">Approved Leave Records & Certificates✅</h2>
 
     @if (session('success'))
         {{-- Use your custom alert classes --}}

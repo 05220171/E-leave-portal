@@ -27,13 +27,21 @@ class DsaController extends Controller
     public function index()
     {
         $dsaUser = Auth::user();
+        
+        // MODIFICATION START: Get user's name and role for the greeting
+        $userName = $dsaUser->name;
+        $role = $dsaUser->role; // Assumes your User model has a 'role' property
+        // MODIFICATION END
+
         $leaves = Leave::with(['student.department', 'type'])
             ->where('current_approver_role', 'dsa')
             ->where('overall_status', 'awaiting_dsa_approval')
             ->orderBy('created_at', 'asc')
             ->paginate(15);
 
-        return view('dsa.dashboard', compact('leaves', 'dsaUser'));
+        // MODIFICATION START: Pass the new variables to the view
+        return view('dsa.dashboard', compact('leaves', 'dsaUser', 'userName', 'role'));
+        // MODIFICATION END
     }
 
     public function approve(Request $request, $id)

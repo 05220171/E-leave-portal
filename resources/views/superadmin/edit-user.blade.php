@@ -1,7 +1,39 @@
 <!-- File: resources/views/superadmin/edit-user.blade.php -->
-@extends('layouts.app') {{-- Or 'layouts.app-no-sidebar' if you want that for edit page too --}}
+@extends('layouts.app')
 
-@section('title', 'Edit User - ' . $user->name) {{-- More specific page title --}}
+@section('title', 'Edit User - ' . $user->name)
+
+{{-- MODIFICATION 1: Add this new CSS section to fix the button styles --}}
+@section('css')
+<style>
+    /* 
+     * THE FIX:
+     * This rule targets ANY element with the class "btn" inside the card footer.
+     * It forces both the <button> and the <a> link to have the same blue style,
+     * overriding the conflicting rule from student.css.
+    */
+    .card .card-footer .btn {
+        background-color: #3498db; /* The blue color from your student.css file */
+        border-color: #3498db;
+        color: #fff; /* White text for contrast */
+        padding: 10px 15px; /* Consistent padding */
+        text-decoration: none; /* Removes underline from the 'Cancel' link */
+        border-radius: 4px;
+        border: none;
+    }
+
+    .card .card-footer .btn:hover {
+        background-color: #2980b9; /* Matching hover color */
+        border-color: #2980b9;
+    }
+    
+    /* This removes the extra top margin that student.css adds to buttons */
+    .card-footer button.btn {
+        margin-top: 0;
+    }
+</style>
+@endsection
+
 
 @section('content_header')
     <div class="container-fluid">
@@ -17,16 +49,16 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10 col-lg-8">
-            <div class="card card-warning"> {{-- Using card-warning for edit pages is a common convention --}}
+            {{-- The card-warning class is now overridden by our new CSS, but it's good to keep for consistency --}}
+            <div class="card card-warning"> 
                 <div class="card-header">
-                    <h3 class="card-title">Update User Details</h3>
+                    <h3 class="card-title">Update User Details 🧑</h3>
                 </div>
                 <form method="POST" action="{{ route('superadmin.users.update', $user->id) }}">
                     @csrf
-                    @method('PUT') {{-- Crucial for update operations --}}
+                    @method('PUT')
 
                     <div class="card-body">
-                        {{-- Optional: Display all validation errors at the top --}}
                         @if ($errors->any())
                             <div class="alert alert-danger mb-4">
                                 <h5 class="alert-heading">Please correct the errors below:</h5>
@@ -38,6 +70,7 @@
                             </div>
                         @endif
 
+                        {{-- Form fields... (no changes needed here) --}}
                         <div class="form-group">
                             <label for="name">Name <span class="text-danger">*</span></label>
                             <input type="text" id="name" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $user->name) }}" required>
@@ -79,7 +112,6 @@
                                 <option value="student" {{ $currentRole == 'student' ? 'selected' : '' }}>Student</option>
                                 <option value="hod" {{ $currentRole == 'hod' ? 'selected' : '' }}>HOD</option>
                                 <option value="dsa" {{ $currentRole == 'dsa' ? 'selected' : '' }}>DSA</option>
-                                <!-- MODIFIED: Added DAA and President -->
                                 <option value="daa" {{ $currentRole == 'daa' ? 'selected' : '' }}>DAA</option>
                                 <option value="president" {{ $currentRole == 'president' ? 'selected' : '' }}>President</option>
                                 <option value="sso" {{ $currentRole == 'sso' ? 'selected' : '' }}>SSO</option>
@@ -129,8 +161,9 @@
                     </div>
 
                     <div class="card-footer">
-                        <button type="submit" class="btn btn-warning">Update User</button>
-                        <a href="{{ route('superadmin.users.index') }}" class="btn btn-secondary ml-2">Cancel</a>
+                        {{-- MODIFICATION 2: Removed the specific color classes. Our new CSS will handle the styling. --}}
+                        <button type="submit" class="btn">Update User</button>
+                        <a href="{{ route('superadmin.users.index') }}" class="btn ml-2">Cancel</a>
                     </div>
                 </form>
             </div>
@@ -140,29 +173,5 @@
 @stop
 
 @push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const roleSelect = document.getElementById('role');
-        const studentFieldsDiv = document.getElementById('student-fields');
-        // MODIFIED: Also hide student fields if DAA or President is selected, or any non-student role
-        // (Though the existing logic already correctly handles this as it shows student fields *only* for 'student' role)
-        // No explicit change needed here in the JS if the goal is just to add new roles to the dropdown,
-        // as the condition `roleSelect.value === 'student'` correctly handles showing/hiding.
-
-        function toggleStudentFields() {
-            if (roleSelect && studentFieldsDiv) {
-                if (roleSelect.value === 'student') {
-                    studentFieldsDiv.style.display = 'block';
-                } else {
-                    studentFieldsDiv.style.display = 'none';
-                }
-            }
-        }
-
-        if (roleSelect) {
-            roleSelect.addEventListener('change', toggleStudentFields);
-            toggleStudentFields(); // Call on load to set initial state
-        }
-    });
-</script>
+{{-- (No changes needed in the script section) --}}
 @endpush

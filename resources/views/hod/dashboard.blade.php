@@ -3,32 +3,72 @@
 
 @section('title', 'HOD Dashboard - Pending Leave Applications')
 
+{{-- Add a new section for page-specific styles or push to a layout stack --}}
+@section('css')
+@parent {{-- Include styles from parent layout if any --}}
+<style>
+    /* Internal CSS for HOD Dashboard Heading */
+    .hod-greeting-heading {
+        font-family: Arial, sans-serif; /* Or your preferred font */
+        font-size: 1.2rem; /* <<< ADJUST THIS VALUE (e.g., 1.5rem, 2rem) >>> */
+                            /* 1.75rem is approx 28px */
+        font-weight: bold;
+        color: #333; /* Dark gray text */
+        text-align: center;
+        margin-bottom: 0.5rem; /* Space between heading and subtitle */
+        line-height: 1.3;
+    }
+
+    .hod-greeting-subtitle {
+        text-align: center;
+        font-size: 0.95rem; /* Smaller size for subtitle */
+        color: #6c757d; /* Muted color */
+        margin-bottom: 1.5rem; /* Space below subtitle */
+    }
+
+    /* You can add other page-specific styles here if needed */
+</style>
+@endsection
+
 @section('content')
 <div class="container mt-4">
-    <h1 class="page-section-title text-center">HOD Dashboard</h1>
-    <p class="text-center text-muted mb-4">Pending Leave Applications for Your Department</p>
+
+    {{-- Dynamic Greeting for HOD - Using custom class for internal CSS --}}
+    <h1 class="hod-greeting-heading">
+        @if (isset($departmentName) && $departmentName && $departmentName !== 'Your Department')
+            Hi, {{ $departmentName }} HOD {{ $userName }}! 👋
+        @elseif (isset($userName))
+            Hi, HOD {{ $userName }}! 👋
+        @else
+            Welcome, HOD! 👋 {{-- Generic fallback --}}
+        @endif
+    </h1>
+    <p class="hod-greeting-subtitle">
+        Pending Leave Applications for Your Department
+    </p>
 
     {{-- Session Messages --}}
     @if(session('success'))
-        <div class="custom-alert custom-alert-success" role="alert">
+        <div class="custom-alert custom-alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
-            <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close">×</button>
+            <button type="button" class="custom-alert-close" aria-label="Close"></button>
         </div>
     @endif
     @if(session('error'))
-        <div class="custom-alert custom-alert-danger" role="alert">
+        <div class="custom-alert custom-alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
-            <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close">×</button>
+            <button type="button" class="custom-alert-close" aria-label="Close"></button>
         </div>
     @endif
      @if(session('info'))
-        <div class="custom-alert custom-alert-info" role="alert">
+        <div class="custom-alert custom-alert-info alert-dismissible fade show" role="alert">
             {{ session('info') }}
-            <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close">×</button>
+            <button type="button" class="custom-alert-close" aria-label="Close"></button>
         </div>
     @endif
 
-    @if($leaves->isEmpty())
+    {{-- ... rest of your HOD dashboard content (table, etc.) ... --}}
+    @if(!isset($leaves) || $leaves->isEmpty())
         <div class="custom-alert custom-alert-info text-center">
             <i class="fas fa-info-circle me-2"></i> No leave requests currently awaiting your approval.
         </div>
@@ -46,11 +86,11 @@
                         <th>Leave Type</th>
                         <th>Dates</th>
                         <th>Days</th>
-                        <th>Reason & Document</th> {{-- Combined "Reason" and "Document" --}}
+                        <th>Reason & Document</th>
                         <th>Applied On</th>
                         <th>Status</th>
-                        <th style="min-width: 200px;">Remarks</th> {{-- <<< NEW REMARKS COLUMN HEADER --}}
-                        <th style="min-width: 180px;">Actions</th> {{-- Actions column --}}
+                        <th style="min-width: 200px;">Remarks</th>
+                        <th style="min-width: 180px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -59,10 +99,14 @@
                             <td>{{ $leaves->firstItem() + $index }}</td>
                             <td>{{ $leave->student->name ?? 'N/A' }}</td>
                             <td>{{ $leave->type->name ?? 'N/A' }}</td>
+                            
+                            <!-- MODIFIED SECTION START -->
                             <td>
                                 {{ $leave->start_date->format('d M Y') }}
-                                <small class="text-muted d-block">to {{ $leave->end_date->format('d M Y') }}</small>
+                                <div>to {{ $leave->end_date->format('d M Y') }}</div>
                             </td>
+                            <!-- MODIFIED SECTION END -->
+                            
                             <td>{{ $leave->number_of_days ?? 'N/A' }}</td>
                             <td>
                                 <span title="{{ $leave->reason }}">{{ Str::limit($leave->reason, 30) }}</span>
@@ -81,25 +125,20 @@
                                     {{ Str::title(str_replace('_', ' ', $leave->overall_status)) }}
                                 </span>
                             </td>
-                            {{-- NEW REMARKS INPUT COLUMN --}}
                             <td>
                                 <textarea id="remarks_for_leave_{{ $leave->id }}" class="form-control form-control-sm elegant-textarea" rows="2" placeholder="Remarks (optional)..."></textarea>
                             </td>
-                            {{-- ACTIONS COLUMN --}}
                             <td class="actions-cell text-center">
-                                {{-- Approve Form --}}
                                 <form action="{{ route('hod.approve-leave', $leave->id) }}" method="POST" class="d-inline-block me-1" onsubmit="return copyHodRemarks(this, {{ $leave->id }})">
                                     @csrf
-                                    <input type="hidden" name="remarks" class="hidden-remarks-input"> {{-- For JS to populate --}}
+                                    <input type="hidden" name="remarks" class="hidden-remarks-input">
                                     <button type="submit" class="custom-btn-sm custom-btn-success" title="Approve Leave">
                                         <i class="fas fa-check"></i> Approve
                                     </button>
                                 </form>
-
-                                {{-- Reject Form --}}
                                 <form action="{{ route('hod.reject-leave', $leave->id) }}" method="POST" class="d-inline-block" onsubmit="return copyHodRemarks(this, {{ $leave->id }})">
                                     @csrf
-                                    <input type="hidden" name="remarks" class="hidden-remarks-input"> {{-- For JS to populate --}}
+                                    <input type="hidden" name="remarks" class="hidden-remarks-input">
                                     <button type="submit" class="custom-btn-sm custom-btn-danger" title="Reject Leave">
                                         <i class="fas fa-times"></i> Reject
                                     </button>
@@ -117,49 +156,30 @@
             </div>
         @endif
     @endif
+
 </div>
 @endsection
 
-
 @push('scripts')
 <script>
-// This script ensures that when either "Approve" or "Reject" is clicked,
-// the content of the remarks textarea in the same row is copied to a hidden
-// input field within the specific form being submitted.
 function copyHodRemarks(formElement, leaveId) {
-    // Find the visible remarks textarea for this specific leave row
     const remarksTextarea = document.getElementById('remarks_for_leave_' + leaveId);
-
     if (remarksTextarea) {
-        // Find the hidden 'remarks' input field within the form that is being submitted
         const hiddenRemarksField = formElement.querySelector('input[name="remarks"].hidden-remarks-input');
         if (hiddenRemarksField) {
             hiddenRemarksField.value = remarksTextarea.value;
-        } else {
-            console.warn('Hidden remarks field not found in form for leave ID: ' + leaveId);
         }
-    } else {
-        console.warn('Remarks textarea not found for leave ID: ' + leaveId);
     }
-    return true; // Allow the form to submit
+    return true;
 }
 
-// Bootstrap 5 Form Validation (if you still want to use it for the remarks textarea if it becomes required)
-// This will only apply to forms with the 'needs-validation' class.
-// The remarks textarea itself does not have 'required' right now.
-(function () {
-  'use strict'
-  var forms = document.querySelectorAll('.needs-validation')
-  Array.prototype.slice.call(forms)
-    .forEach(function (form) {
-      form.addEventListener('submit', function (event) {
-        if (!form.checkValidity()) {
-          event.preventDefault()
-          event.stopPropagation()
-        }
-        form.classList.add('was-validated')
-      }, false)
-    })
-})()
+document.addEventListener('DOMContentLoaded', function () {
+    var alertCloseButtons = document.querySelectorAll('.custom-alert .custom-alert-close');
+    alertCloseButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            this.closest('.custom-alert').style.display = 'none';
+        });
+    });
+});
 </script>
 @endpush

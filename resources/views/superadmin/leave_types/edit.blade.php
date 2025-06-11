@@ -38,6 +38,7 @@
                            value="{{ old('name', $leaveType->name) }}"
                            required>
                     @error('name')
+                        {{-- Use d-block on invalid-feedback if it's not showing correctly below input --}}
                         <span class="invalid-feedback d-block" role="alert"><strong>{{ $message }}</strong></span>
                     @enderror
                 </div>
@@ -56,7 +57,6 @@
                 </div>
 
                 <div class="mb-4 form-check">
-                    
                     <input type="checkbox"
                            id="is_active"
                            name="is_active"
@@ -72,19 +72,24 @@
                     @enderror
                 </div>
             </div>
-            <div class="card-footer text-end bg-light">
-                <a href="{{ route('superadmin.leave-types.index') }}" class="custom-btn custom-btn-secondary me-2">Cancel</a>
-                <button type="submit" class="custom-btn custom-btn-primary"><i class="fas fa-save me-1"></i> Update Leave Type</button>
+            {{-- MODIFIED CARD FOOTER to match create form's button logic --}}
+            <div class="card-footer bg-light d-flex align-items-center">
+                {{-- Cancel button - its size is determined by .custom-btn-sm --}}
+                <a href="{{ route('superadmin.leave-types.index') }}" class="custom-btn custom-btn-sm custom-btn-secondary me-2">Cancel</a>
+
+                {{-- Update button, pushed to the far right, using the specific sizing class --}}
+                <button type="submit" class="custom-btn custom-btn-sm custom-btn-primary ms-auto create-leave-type-button-specific-size">
+                                                                                {{-- ^^^ Apply the same class here --}}
+                    <i class="fas fa-save me-1"></i> Update Leave Type
+                </button>
             </div>
         </form>
     </div>
 </div>
 @endsection
 
-{{-- No @section('css') needed if styles are global --}}
-
-@push('scripts')
-{{-- Standard Bootstrap 5 Form Validation Script (if not globally included in layouts.app.blade.php) --}}
+{{-- Change @push('scripts') to @section('js') if your app.blade.php uses @yield('js') --}}
+@section('js')
 <script>
 (function () {
   'use strict'
@@ -101,4 +106,4 @@
     })
 })()
 </script>
-@endpush
+@endsection

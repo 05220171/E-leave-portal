@@ -9,12 +9,13 @@ use App\Http\Controllers\DsaController;
 use App\Http\Controllers\SSOController;
 use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\ExcelImportController;
-use App\Http\Controllers\DepartmentController; 
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DaaController;
 use App\Http\Controllers\PresidentController;
 use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\LeaveWorkflowController;
 use App\Http\Controllers\DependentDropdownController; // Create this controller
+
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -22,8 +23,9 @@ use App\Http\Controllers\DependentDropdownController; // Create this controller
 */
 Route::get('/', [HomeController::class, 'index'])->name('landing');
 
-Route::get('/import-users', [ExcelImportController::class, 'importForm'])->name('import.users.form');
-Route::post('/import-users', [ExcelImportController::class, 'import'])->name('import.users.store');
+// Note: This route for import seems general. The superadmin also has import. Clarify if this is intended.
+// Route::get('/import-users', [ExcelImportController::class, 'importForm'])->name('import.users.form');
+// Route::post('/import-users', [ExcelImportController::class, 'import'])->name('import.users.store');
 
 /*
 |--------------------------------------------------------------------------
@@ -52,44 +54,42 @@ Route::middleware([
     | Admin Routes (Formerly "Super Admin" in middleware, now uses 'admin' role)
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['role:admin'])
+    Route::middleware(['role:admin']) // Ensure this middleware correctly identifies superadmins/admins
          ->prefix('superadmin')
          ->name('superadmin.')
          ->group(function () {
 
             Route::get('/', [SuperAdminController::class, 'dashboard'])->name('dashboard');
+
+            // User Management (Original resource route + specific user type views)
             Route::resource('users', SuperAdminController::class)->except(['show']);
             Route::get('users/import/form', [SuperAdminController::class, 'importForm'])->name('users.importForm');
             Route::post('users/import', [SuperAdminController::class, 'import'])->name('users.import');
-            Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
 
-            Route::resource('departments', DepartmentController::class);
+            // New routes for managing specific user types
+            Route::get('/users/students', [SuperAdminController::class, 'manageStudents'])->name('users.students');
+            Route::get('/users/staff', [SuperAdminController::class, 'manageStaffs'])->name('users.staff');
+            // End User Management
+
+            Route::resource('departments', DepartmentController::class); // Assuming this is for superadmin
+            Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
 
             // --- API Routes for Dependent Dropdowns (Protected by 'role:admin') ---
             Route::prefix('api') // Further prefixing to /superadmin/api/
                  ->name('api.')   // Further naming to superadmin.api.
                  ->group(function () {
-                    // Expects a department ID or model instance, e.g., /superadmin/api/departments/1/programs
                     Route::get('departments/{department}/programs', [DependentDropdownController::class, 'getPrograms'])
                          ->name('departments.programs');
-
-                    // Expects a program ID or model instance (or code if you adjust controller),
-                    // e.g., /superadmin/api/programs/DCSN/classes or /superadmin/api/programs/5/classes
                     Route::get('programs/{program}/classes', [DependentDropdownController::class, 'getClasses'])
                          ->name('programs.classes');
             });
 
-            
-            Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
             // --- ADD LEAVE WORKFLOW ROUTES (Nested under leave-types) ---
             Route::prefix('leave-types/{leaveType}/workflows')->name('leave-types.workflows.')
                 ->group(function () {
                     Route::get('/', [LeaveWorkflowController::class, 'index'])->name('index');
                     Route::post('/', [LeaveWorkflowController::class, 'store'])->name('store');
                     Route::delete('/{workflow}', [LeaveWorkflowController::class, 'destroy'])->name('destroy');
-                    // Optional Edit/Update routes if you implement the edit methods
-                    // Route::get('/{workflow}/edit', [LeaveWorkflowController::class, 'edit'])->name('edit');
-                    // Route::put('/{workflow}', [LeaveWorkflowController::class, 'update'])->name('update');
             });
             // --- END LEAVE WORKFLOW ROUTES ---
         });
@@ -99,7 +99,6 @@ Route::middleware([
     | Student Routes
     |--------------------------------------------------------------------------
     */
-    // ... (rest of your student routes remain unchanged) ...
     Route::middleware(['role:student'])
          ->prefix('student')
          ->name('student.')
@@ -109,8 +108,7 @@ Route::middleware([
         Route::get('/leave-history', [StudentLeaveController::class, 'history'])->name('leave-history');
         Route::delete('/leave/{id}', [StudentLeaveController::class, 'delete'])->name('delete-leave');
         Route::post('/cancel-leave/{id}', [StudentLeaveController::class, 'cancel'])->name('cancel-leave');
-        Route::get('/leave-status', [StudentLeaveController::class, 'status'])->name('leave-status');// NOW shows APPROVED leaves + download
-        // NEW ROUTE FOR DOWNLOADING CERTIFICATE
+        Route::get('/leave-status', [StudentLeaveController::class, 'status'])->name('leave-status');
         Route::get('/leave-certificate/{leave}/download', [StudentLeaveController::class, 'downloadLeaveCertificate'])->name('leave.download-certificate');
     });
 
@@ -119,7 +117,6 @@ Route::middleware([
     | HOD Routes
     |--------------------------------------------------------------------------
     */
-    // ... (rest of your HOD routes remain unchanged) ...
      Route::middleware(['role:hod'])
          ->prefix('hod')
          ->name('hod.')
@@ -131,13 +128,11 @@ Route::middleware([
         Route::get('/approved-records', [HodController::class, 'approvedRecords'])->name('approved-records');
     });
 
-
     /*
     |--------------------------------------------------------------------------
     | DSA Routes
     |--------------------------------------------------------------------------
     */
-    // ... (rest of your DSA routes remain unchanged) ...
     Route::middleware(['role:dsa'])
          ->prefix('dsa')
          ->name('dsa.')
@@ -148,20 +143,16 @@ Route::middleware([
         Route::get('/approved-records', [DsaController::class, 'approvedRecords'])->name('approved-records');
     });
 
-
-
     /*
     |--------------------------------------------------------------------------
     | DAA Routes
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['role:daa']) // Uses your CheckUserRole middleware
+    Route::middleware(['role:daa'])
          ->prefix('daa')
          ->name('daa.')
          ->group(function () {
         Route::get('/dashboard', [DaaController::class, 'dashboard'])->name('dashboard');
-        // Add other DAA specific routes here later
-        // Example: Route::get('/pending-medical-leaves', [DaaController::class, 'pendingMedical'])->name('pending-medical');
     });
 
     /*
@@ -169,23 +160,18 @@ Route::middleware([
     | President Routes
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['role:president']) // Uses your CheckUserRole middleware
+    Route::middleware(['role:president'])
          ->prefix('president')
          ->name('president.')
          ->group(function () {
         Route::get('/dashboard', [PresidentController::class, 'dashboard'])->name('dashboard');
-        // Add other President specific routes here later
-        // Example: Route::get('/approved-medical-leaves', [PresidentController::class, 'approvedMedical'])->name('approved-medical');
     });
-
-
 
     /*
     |--------------------------------------------------------------------------
     | SSO Routes
     |--------------------------------------------------------------------------
     */
-    // ... (rest of your SSO routes remain unchanged) ...
     Route::middleware(['role:sso'])
          ->prefix('sso')
          ->name('sso.')
@@ -193,9 +179,8 @@ Route::middleware([
         Route::get('/dashboard', [SSOController::class, 'dashboard'])->name('dashboard');
         Route::post('/leaves/{leave}/mark-recorded', [SSOController::class, 'markAsRecorded'])->name('leaves.mark-recorded');
         });
-        // Route::post('/approve/{id}', [SSOController::class, 'approveLeave'])->name('approve-leave');
-        // Route::post('/reject/{id}', [SSOController::class, 'rejectLeave'])->name('reject-leave');
-
 });
 
-// require __DIR__.'/auth.php';
+// If you are using Laravel Jetstream or Breeze, they usually have their own auth routes file.
+// If you have a custom one, ensure it's correctly included.
+// For example: require __DIR__.'/auth.php';

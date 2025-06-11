@@ -23,17 +23,10 @@ class SSOController extends Controller
     {
         $ssoUser = Auth::user();
 
-        // Option A: Show leaves specifically assigned to SSO for record-keeping via workflow
-        // $leavesForRecord = Leave::with(['student.department', 'type', 'approvalActions'])
-        //     ->where('current_approver_role', 'sso')
-        //     // The status might be 'approved' (set by DSA) or a specific 'awaiting_sso_record_keeping'
-        //     // If DSA sets it to 'approved' directly, then current_approver_role='sso' is the key.
-        //     ->where(function($query) {
-        //         $query->where('overall_status', 'awaiting_sso_record_keeping') // If DSA sets this status
-        //               ->orWhere('overall_status', 'approved'); // If DSA sets to approved but current_approver is SSO
-        //     })
-        //     ->orderBy('updated_at', 'desc') // Show most recently updated ones first
-        //     ->paginate(15);
+        // MODIFICATION START: Get user's name and role for the greeting
+        $userName = $ssoUser->name;
+        $role = $ssoUser->role; // Assumes your User model has a 'role' property
+        // MODIFICATION END
 
         // Option B: Show ALL leaves that are fully approved (simpler if SSO just needs a view of all approved)
         $approvedLeaves = Leave::with(['student.department', 'type', 'approvalActions'])
@@ -42,7 +35,9 @@ class SSOController extends Controller
                     ->paginate(15);
         $leavesForRecord = $approvedLeaves; // Use this if Option B is preferred
 
-        return view('sso.dashboard', compact('leavesForRecord', 'ssoUser'));
+        // MODIFICATION START: Pass the new variables to the view
+        return view('sso.dashboard', compact('leavesForRecord', 'ssoUser', 'userName', 'role'));
+        // MODIFICATION END
     }
 
     /**
@@ -78,9 +73,6 @@ class SSOController extends Controller
                 'leave_id' => $leave->id,
                 'user_id' => $ssoUser->id,
                 'acted_as_role' => 'sso',
-                // Use the leave's current_step_number if it was explicitly assigned to SSO via workflow.
-                // If SSO is just viewing all 'approved' leaves, this step number might be the last one DSA acted on,
-                // or you might define a conceptual "final recording step" number.
                 'workflow_step_number' => $leave->current_step_number ?? 99, // 99 as a placeholder for generic recording step
                 'action_taken' => 'recorded',
                 'remarks' => $request->input('sso_remarks'), // If SSO can add remarks
@@ -90,8 +82,6 @@ class SSOController extends Controller
             // Update the leave record if it was specifically pending SSO
             if ($leave->current_approver_role === 'sso') {
                 $leave->current_approver_role = null; // Process complete from workflow perspective
-                // overall_status should already be 'approved' or 'awaiting_sso_record_keeping'
-                // If it was 'awaiting_sso_record_keeping', you might change it to 'approved_and_recorded'
                 if ($leave->overall_status === 'awaiting_sso_record_keeping') {
                     $leave->overall_status = 'approved_recorded'; // Or 'approved_recorded'
                 }
@@ -99,10 +89,6 @@ class SSOController extends Controller
             }
 
             DB::commit();
-
-            // No email typically needed from SSO's "mark as recorded" action,
-            // as the main approval notifications were sent by DSA.
-            // Unless there's a specific internal notification required.
 
             return redirect()->route('sso.dashboard')->with('success', 'Leave request for ' . $leave->student->name . ' marked as recorded.');
 
@@ -112,10 +98,4 @@ class SSOController extends Controller
             return redirect()->route('sso.dashboard')->with('error', 'An error occurred: ' . $e->getMessage());
         }
     }
-
-    // Remove or comment out old approveLeave and rejectLeave methods
-    /*
-    public function approveLeave(Request $request, $id) { ... }
-    public function rejectLeave(Request $request, $id) { ... }
-    */
 }
