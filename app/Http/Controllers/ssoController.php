@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Leave;
-use App\Models\LeaveRequestApproval; // <<< ADD THIS
+//use App\Models\LeaveRequestApproval; // <<< ADD THIS
 use App\Models\User;                // <<< ADD THIS (if needed for user details)
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,25 +19,48 @@ class SSOController extends Controller
      * Display leaves for SSO to review/record.
      * This could be leaves explicitly assigned to SSO for record-keeping OR all approved leaves.
      */
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $ssoUser = Auth::user();
-
-        // MODIFICATION START: Get user's name and role for the greeting
         $userName = $ssoUser->name;
-        $role = $ssoUser->role; // Assumes your User model has a 'role' property
-        // MODIFICATION END
+        $role = $ssoUser->role;
 
-        // Option B: Show ALL leaves that are fully approved (simpler if SSO just needs a view of all approved)
-        $approvedLeaves = Leave::with(['student.department', 'type', 'approvalActions'])
-                    ->where('overall_status', 'approved')
-                    ->orderBy('updated_at', 'desc')
-                    ->paginate(15);
-        $leavesForRecord = $approvedLeaves; // Use this if Option B is preferred
+        $searchTerm = $request->input('search');
 
-        // MODIFICATION START: Pass the new variables to the view
+        // SSO sees leaves that are fully approved or were explicitly sent for their record keeping
+        $query = Leave::with([
+                        'student.department',
+                        'student.program', // Eager load student's program
+                        'type',
+                        // 'approvalActions.user' // Only needed if displaying who recorded, which we are removing
+                     ])
+                     ->whereIn('overall_status', ['approved', 'approved_recorded', 'awaiting_sso_record_keeping']); // Leaves SSO should see
+
+        if ($searchTerm) {
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereHas('student', function ($studentQuery) use ($searchTerm) {
+                    $studentQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                                 ->orWhereHas('department', function ($deptQuery) use ($searchTerm) {
+                                     $deptQuery->where('name', 'LIKE', "%{$searchTerm}%");
+                                 })
+                                 ->orWhereHas('program', function ($progQuery) use ($searchTerm) {
+                                     $progQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                                               ->orWhere('code', 'LIKE', "%{$searchTerm}%");
+                                 });
+                })
+                ->orWhereHas('type', function ($typeQuery) use ($searchTerm) {
+                    $typeQuery->where('name', 'LIKE', "%{$searchTerm}%");
+                });
+                // You can add date range search here if needed in the future
+            });
+        }
+
+        // Order by when they were last updated (e.g., when they became 'approved' or 'awaiting_sso_record_keeping')
+        $leavesForRecord = $query->orderBy('updated_at', 'desc')
+                                 ->paginate(15)
+                                 ->withQueryString(); // Appends search query to pagination links
+
         return view('sso.dashboard', compact('leavesForRecord', 'ssoUser', 'userName', 'role'));
-        // MODIFICATION END
     }
 
     /**

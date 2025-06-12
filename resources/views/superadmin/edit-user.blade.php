@@ -49,61 +49,36 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10 col-lg-8">
-            {{-- The card-warning class is now overridden by our new CSS, but it's good to keep for consistency --}}
-            <div class="card card-warning"> 
-                <div class="card-header">
-                    <h3 class="card-title">Update User Details 🧑</h3>
-                </div>
+            <div class="card card-warning">
+                <div class="card-header"><h3 class="card-title">Update User Details 🧑</h3></div>
                 <form method="POST" action="{{ route('superadmin.users.update', $user->id) }}">
                     @csrf
                     @method('PUT')
-
                     <div class="card-body">
-                        @if ($errors->any())
-                            <div class="alert alert-danger mb-4">
-                                <h5 class="alert-heading">Please correct the errors below:</h5>
-                                <ul>
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
-
-                        {{-- Form fields... (no changes needed here) --}}
-                        <div class="form-group">
+                        {{-- Name, Email, Password, Role --}}
+                        {{-- (These fields remain the same) --}}
+                         <div class="form-group">
                             <label for="name">Name <span class="text-danger">*</span></label>
                             <input type="text" id="name" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $user->name) }}" required>
-                            @error('name')
-                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
+                            @error('name') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                         </div>
-
                         <div class="form-group">
                             <label for="email">Email <span class="text-danger">*</span></label>
                             <input type="email" id="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $user->email) }}" required>
-                            @error('email')
-                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
+                            @error('email') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                         </div>
-
-                        <hr>
-                        <p class="text-muted">Update Password (optional):</p>
+                        <hr><p class="text-muted">Update Password (optional):</p>
                         <div class="form-group">
                             <label for="password">New Password</label>
                             <input type="password" id="password" name="password" class="form-control @error('password') is-invalid @enderror">
-                            <small class="form-text text-muted">Leave blank to keep the current password.</small>
-                            @error('password')
-                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
+                            <small class="form-text text-muted">Leave blank to keep current password.</small>
+                            @error('password') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                         </div>
-
                         <div class="form-group">
                             <label for="password_confirmation">Confirm New Password</label>
                             <input type="password" id="password_confirmation" name="password_confirmation" class="form-control">
                         </div>
                         <hr>
-
                         <div class="form-group">
                             <label for="role">Role <span class="text-danger">*</span></label>
                             <select name="role" id="role" class="form-control @error('role') is-invalid @enderror" required>
@@ -118,50 +93,47 @@
                                 <option value="admin" {{ $currentRole == 'admin' ? 'selected' : '' }}>Admin</option>
                                 <option value="superadmin" {{ $currentRole == 'superadmin' ? 'selected' : '' }}>Super Admin</option>
                             </select>
-                            @error('role')
-                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
+                             @error('role') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                         </div>
 
+                        {{-- Department Dropdown --}}
                         <div class="form-group">
-                            <label for="department_id">Department <span class="text-danger">*</span></label>
-                            <select name="department_id" id="department_id" class="form-control @error('department_id') is-invalid @enderror" required>
+                            <label for="department_id">Department <span id="department_required_star_edit" class="text-danger" style="display:none;">*</span></label>
+                            <select name="department_id" id="department_id_edit" class="form-control @error('department_id') is-invalid @enderror">
                                 <option value="">-- Select Department --</option>
-                                @php $currentDepartment = old('department_id', $user->department_id); @endphp
                                 @foreach($departments as $department)
-                                    <option value="{{ $department->id }}" {{ $currentDepartment == $department->id ? 'selected' : '' }}>
+                                    <option value="{{ $department->id }}" {{ old('department_id', $user->department_id) == $department->id ? 'selected' : '' }}>
                                         {{ $department->name }}
                                     </option>
                                 @endforeach
                             </select>
-                            @error('department_id')
-                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
+                            @error('department_id') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                         </div>
 
-                        <div id="student-fields" style="{{ old('role', $user->role) == 'student' ? 'display: block;' : 'display: none;' }}">
+                        {{-- Student Specific Fields --}}
+                        <div id="student-fields-edit" style="{{ old('role', $user->role) == 'student' ? 'display: block;' : 'display: none;' }}">
                             <hr>
                             <p class="text-muted">Student Specific Information:</p>
+
+                            {{-- Program Dropdown --}}
                             <div class="form-group">
-                                <label for="program">Program</label>
-                                <input type="text" id="program" name="program" class="form-control @error('program') is-invalid @enderror" value="{{ old('program', $user->program) }}">
-                                @error('program')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                @enderror
+                                <label for="program_id_edit">Program <span class="text-danger">*</span></label>
+                                <select name="program_id" id="program_id_edit" class="form-control @error('program_id') is-invalid @enderror" disabled>
+                                    <option value="">-- Select Department First --</option>
+                                    {{-- Options populated by JS. Pre-selection handled by JS. --}}
+                                </select>
+                                @error('program_id') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                             </div>
 
+                            {{-- Class Field --}}
                             <div class="form-group">
-                                <label for="class">Class</label>
-                                <input type="text" id="class" name="class" class="form-control @error('class') is-invalid @enderror" value="{{ old('class', $user->class) }}">
-                                @error('class')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                @enderror
+                                <label for="class_edit">Class/Year <span class="text-danger">*</span></label>
+                                <input type="text" name="class" id="class_edit" class="form-control @error('class') is-invalid @enderror" value="{{ old('class', $user->class) }}">
+                                @error('class') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                             </div>
                         </div>
                     </div>
-
                     <div class="card-footer">
-                        {{-- MODIFICATION 2: Removed the specific color classes. Our new CSS will handle the styling. --}}
                         <button type="submit" class="btn">Update User</button>
                         <a href="{{ route('superadmin.users.index') }}" class="btn ml-2">Cancel</a>
                     </div>
@@ -173,5 +145,121 @@
 @stop
 
 @push('scripts')
-{{-- (No changes needed in the script section) --}}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Script for edit form - ensure unique IDs for elements
+    const roleSelectEdit = document.getElementById('role'); // Assuming ID is 'role' as in create form
+    const departmentSelectEdit = document.getElementById('department_id_edit');
+    const programSelectEdit = document.getElementById('program_id_edit');
+    const classSelectEdit = document.getElementById('class_edit');
+    const studentFieldsDivEdit = document.getElementById('student-fields-edit');
+    const departmentRequiredStarEdit = document.getElementById('department_required_star_edit');
+
+    const initialUserRole = "{{ old('role', $user->role) }}";
+    const initialDepartmentId = "{{ old('department_id', $user->department_id) }}";
+    const initialProgramId = "{{ old('program_id', $user->program_id) }}"; // Use program_id
+    // const initialClassValue = "{{ old('class', $user->class) }}";
+
+    function toggleStudentFieldsEdit() {
+        const isStudent = roleSelectEdit.value === 'student';
+        const isHod = roleSelectEdit.value === 'hod';
+        studentFieldsDivEdit.style.display = isStudent ? 'block' : 'none';
+
+        if (isStudent || isHod) {
+            departmentRequiredStarEdit.style.display = 'inline';
+        } else {
+            departmentRequiredStarEdit.style.display = 'none';
+        }
+
+        if (isStudent) {
+            if (departmentSelectEdit.value) { // If a department is selected
+                fetchProgramsEdit(departmentSelectEdit.value, initialProgramId);
+            } else { // No department selected, clear program and class
+                clearProgramSelectEdit();
+                clearClassSelectEdit();
+            }
+        } else { // Not a student
+            clearProgramSelectEdit(true); // Disable program dropdown
+            clearClassSelectEdit(true);   // Disable class field/dropdown
+        }
+    }
+
+    function clearProgramSelectEdit(disabled = false) {
+        programSelectEdit.innerHTML = '<option value="">-- Select Department First --</option>';
+        programSelectEdit.disabled = disabled;
+    }
+    function clearClassSelectEdit(disabled = false) {
+        if (classSelectEdit.tagName === 'SELECT') {
+            classSelectEdit.innerHTML = '<option value="">-- Select Program First --</option>';
+        } else {
+            classSelectEdit.value = '';
+        }
+        classSelectEdit.disabled = disabled;
+    }
+
+
+    function fetchProgramsEdit(departmentId, programIdToSelect = null) {
+        if (!departmentId) {
+            clearProgramSelectEdit(roleSelectEdit.value !== 'student');
+            clearClassSelectEdit(roleSelectEdit.value !== 'student');
+            return;
+        }
+        programSelectEdit.innerHTML = '<option value="">-- Loading Programs... --</option>';
+        programSelectEdit.disabled = true;
+        clearClassSelectEdit(roleSelectEdit.value !== 'student');
+
+        const url = `{{ route('superadmin.api.departments.programs', ['department' => ':departmentId']) }}`.replace(':departmentId', departmentId);
+        fetch(url)
+            .then(response => response.json())
+            .then(programs => {
+                programSelectEdit.innerHTML = '<option value="">-- Select Program --</option>';
+                if (programs.length > 0) {
+                    programs.forEach(program => {
+                        const option = document.createElement('option');
+                        option.value = program.id; // Use program ID
+                        option.textContent = `${program.name} (${program.code})`;
+                        if (programIdToSelect && program.id == programIdToSelect) {
+                            option.selected = true;
+                        }
+                        programSelectEdit.appendChild(option);
+                    });
+                    programSelectEdit.disabled = false;
+                    // If a program was pre-selected, trigger change if classes depend on it
+                    if (programIdToSelect && programSelectEdit.value == programIdToSelect) {
+                        // programSelectEdit.dispatchEvent(new Event('change'));
+                    }
+                } else {
+                    programSelectEdit.innerHTML = '<option value="">-- No Programs Available --</option>';
+                    programSelectEdit.disabled = true;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching programs for edit:', error);
+                programSelectEdit.innerHTML = '<option value="">-- Error Loading --</option>';
+                programSelectEdit.disabled = true;
+            });
+    }
+
+    // Event Listeners
+    roleSelectEdit.addEventListener('change', toggleStudentFieldsEdit);
+    departmentSelectEdit.addEventListener('change', function() {
+        if (roleSelectEdit.value === 'student') {
+            // When department changes, only pre-select old program if it's the initial department
+            const programToSelect = (this.value === initialDepartmentId) ? initialProgramId : null;
+            fetchProgramsEdit(this.value, programToSelect);
+        } else {
+            clearProgramSelectEdit(true);
+            clearClassSelectEdit(true);
+        }
+    });
+
+    // programSelectEdit.addEventListener('change', function() { /* For class dropdown */ });
+
+    // Initial population for edit form
+    if (initialUserRole === 'student' && initialDepartmentId) {
+        fetchProgramsEdit(initialDepartmentId, initialProgramId);
+    }
+    toggleStudentFieldsEdit(); // Call once on load to set initial visibility and requirements
+});
+</script>
 @endpush

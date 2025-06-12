@@ -31,7 +31,7 @@ class User extends Authenticatable // Optional: implements MustVerifyEmail
         'password',
         'role',
         'department_id',
-        'program',
+        'program_id',
         'class', // Consider renaming to class_year if 'class' is a PHP keyword issue for you
         'email_verified_at',
     ];
@@ -67,6 +67,7 @@ class User extends Authenticatable // Optional: implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'program_id' => 'integer',
         ];
     }
 
@@ -87,4 +88,13 @@ class User extends Authenticatable // Optional: implements MustVerifyEmail
         // and 'Department' model exists in App\Models namespace.
         return $this->belongsTo(Department::class, 'department_id');
     }
+
+    /**
+     * Get the program that the user (student) belongs to.
+     */
+    public function program(): BelongsTo // NEW Relationship
+    {
+        return $this->belongsTo(Program::class, 'program_id');
+    }
+
 }

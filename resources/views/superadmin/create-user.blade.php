@@ -53,46 +53,31 @@
     <div class="row justify-content-center">
         <div class="col-md-10 col-lg-8">
             <div class="card card-primary">
-                <div class="card-header">
-                    <h3 class="card-title">User Details</h3>
-                </div>
+                <div class="card-header"><h3 class="card-title">User Details</h3></div>
                 <form method="POST" action="{{ route('superadmin.users.store') }}">
                     @csrf
                     <div class="card-body">
-                        {{-- Name Field --}}
+                        {{-- Name, Email, Password, Confirm Password, Role --}}
+                        {{-- (These fields remain the same as your last version) --}}
                         <div class="form-group">
                             <label for="name">Name <span class="text-danger">*</span></label>
                             <input type="text" id="name" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
-                            @error('name')
-                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
+                            @error('name') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                         </div>
-
-                        {{-- Email Field --}}
                         <div class="form-group">
                             <label for="email">Email <span class="text-danger">*</span></label>
                             <input type="email" id="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}" required>
-                            @error('email')
-                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
+                            @error('email') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                         </div>
-
-                        {{-- Password Field --}}
                         <div class="form-group">
                             <label for="password">Password <span class="text-danger">*</span></label>
                             <input type="password" id="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
-                            @error('password')
-                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
+                            @error('password') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                         </div>
-
-                        {{-- Confirm Password Field --}}
                         <div class="form-group">
                             <label for="password_confirmation">Confirm Password <span class="text-danger">*</span></label>
                             <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" required>
                         </div>
-
-                        {{-- Role Dropdown --}}
                         <div class="form-group">
                             <label for="role">Role <span class="text-danger">*</span></label>
                             <select name="role" id="role" class="form-control @error('role') is-invalid @enderror" required>
@@ -101,61 +86,55 @@
                                 <option value="hod" {{ old('role') == 'hod' ? 'selected' : '' }}>HOD</option>
                                 <option value="dsa" {{ old('role') == 'dsa' ? 'selected' : '' }}>DSA</option>
                                 <option value="sso" {{ old('role') == 'sso' ? 'selected' : '' }}>SSO</option>
-                               
+                                <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
+                                <option value="superadmin" {{ old('role') == 'superadmin' ? 'selected' : '' }}>Super Admin</option>
                             </select>
-                            @error('role')
-                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
+                            @error('role') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                         </div>
 
                         {{-- Department Dropdown --}}
                         <div class="form-group">
-                            <label for="department_id">Department <span class="text-danger">*</span></label>
-                            <select name="department_id" id="department_id" class="form-control @error('department_id') is-invalid @enderror" required>
+                            <label for="department_id">Department <span id="department_required_star" class="text-danger" style="display:none;">*</span></label>
+                            <select name="department_id" id="department_id" class="form-control @error('department_id') is-invalid @enderror">
                                 <option value="">-- Select Department --</option>
-                                @foreach($departments as $department) {{-- $departments is passed from SuperAdminController@create --}}
+                                @foreach($departments as $department)
                                     <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
                                         {{ $department->name }}
                                     </option>
                                 @endforeach
                             </select>
-                            @error('department_id')
-                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
+                            @error('department_id') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                         </div>
 
                         {{-- Student Specific Fields --}}
                         <div id="student-fields" style="{{ old('role') == 'student' ? 'display: block;' : 'display: none;' }}">
                             <hr>
-                            <p class="text-muted"></p>
+                            <p class="text-muted">Student Specific Information:</p>
 
-                            {{-- Program Dropdown --}}
+                            {{-- Program Dropdown (REPLACED TEXT INPUT) --}}
                             <div class="form-group">
-                                <label for="program">Program <span class="text-danger">*</span></label>
-                                <select name="program" id="program" class="form-control @error('program') is-invalid @enderror">
-                                    <option value="">-- Select Program --</option>
+                                <label for="program_id">Program <span class="text-danger">*</span></label>
+                                <select name="program_id" id="program_id" class="form-control @error('program_id') is-invalid @enderror" disabled>
+                                    <option value="">-- Select Department First --</option>
                                     {{-- Options will be populated by JavaScript --}}
                                 </select>
-                                @error('program')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                @enderror
+                                @error('program_id') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                             </div>
 
-                            {{-- Class Dropdown --}}
+                            {{-- Class Field (Still text input, or change to dependent dropdown later) --}}
                             <div class="form-group">
-                                <label for="class">Class <span class="text-danger">*</span></label>
-                                <select name="class" id="class" class="form-control @error('class') is-invalid @enderror">
-                                    <option value="">-- Select Class --</option>
-                                    {{-- Options will be populated by JavaScript --}}
+                                <label for="class">Class/Year <span class="text-danger">*</span></label>
+                                <input type="text" name="class" id="class" class="form-control @error('class') is-invalid @enderror" value="{{ old('class') }}">
+                                {{-- If 'class' becomes a dropdown:
+                                <select name="class_id" id="class_id" class="form-control @error('class_id') is-invalid @enderror" disabled>
+                                    <option value="">-- Select Program First --</option>
                                 </select>
-                                @error('class')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                @enderror
+                                --}}
+                                @error('class') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
                             </div>
                         </div>
                     </div>
                     <div class="card-footer">
-                        {{-- MODIFICATION 2: Removed specific color classes so our new CSS can take over --}}
                         <button type="submit" class="btn">Create User</button>
                         <a href="{{ route('superadmin.users.index') }}" class="btn ml-2">Cancel</a>
                     </div>
@@ -169,222 +148,135 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('SCRIPT START: DOMContentLoaded fired.');
-
     const roleSelect = document.getElementById('role');
     const departmentSelect = document.getElementById('department_id');
-    const programSelect = document.getElementById('program');
-    const classSelect = document.getElementById('class');
+    const programSelect = document.getElementById('program_id'); // Changed ID
+    const classSelect = document.getElementById('class'); // Assuming class is still text, or use class_id for select
     const studentFieldsDiv = document.getElementById('student-fields');
+    const departmentRequiredStar = document.getElementById('department_required_star');
 
-    const oldProgramCode = "{{ old('program') }}"; // This will be the program CODE
-    const oldClassCode = "{{ old('class') }}";     // This will be the class CODE
-    const oldDepartmentId = "{{ old('department_id') }}"; // Get old department ID
+    // Store old values for re-population on validation error
+    const oldDepartmentId = "{{ old('department_id') }}";
+    const oldProgramId = "{{ old('program_id') }}"; // Use program_id
+    // const oldClassValue = "{{ old('class') }}"; // If class remains text
 
-    console.log('Elements:', { roleSelect, departmentSelect, programSelect, classSelect, studentFieldsDiv });
-    console.log('Old values:', { oldDepartmentId, oldProgramCode, oldClassCode });
-
-    if (!roleSelect || !departmentSelect || !programSelect || !classSelect || !studentFieldsDiv) {
-        console.error('CRITICAL: One or more essential select/div elements not found!');
-        return;
-    }
-
-    function clearSelect(selectElement, defaultOptionText = '-- Select --', disabled = true) {
-        selectElement.innerHTML = `<option value="">${defaultOptionText}</option>`;
-        selectElement.disabled = disabled;
-    }
-
-    function populateSelect(selectElement, data, valueField = 'code', textField = 'name', selectedValue = null) {
-        const originalDefaultText = `-- Select ${selectElement.id.charAt(0).toUpperCase() + selectElement.id.slice(1)} --`;
-        clearSelect(selectElement, originalDefaultText, false); // Enable before populating
-
-        let valueFoundAndSelected = false;
-        if (data && data.length > 0) {
-            data.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item[valueField];
-                option.textContent = item[textField];
-                if (selectedValue && item[valueField] == selectedValue) {
-                    option.selected = true;
-                    valueFoundAndSelected = true;
-                }
-                selectElement.appendChild(option);
-            });
-        }
-
-        if (!(data && data.length > 0) || (selectedValue && !valueFoundAndSelected)) {
-             // If no data, or if a selection was attempted but not found, ensure a clear state
-            if (!(data && data.length > 0)) {
-                selectElement.innerHTML = `<option value="" disabled>-- No Options Available --</option>`;
-            }
-            selectElement.disabled = true;
-            if (data && data.length > 0 && selectedValue && !valueFoundAndSelected) { // Add a placeholder if selected value wasn't found in populated options
-                 const firstOption = selectElement.firstChild;
-                 const tempOption = document.createElement('option');
-                 tempOption.value = "";
-                 tempOption.textContent = `-- Select ${selectElement.id.charAt(0).toUpperCase() + selectElement.id.slice(1)} --`;
-                 tempOption.selected = true;
-                 tempOption.disabled = true; // Make it unselectable
-                 selectElement.insertBefore(tempOption, firstOption);
-                 selectElement.value = ""; // Reset to the placeholder
-                 selectElement.disabled = false;
-            }
-        } else {
-            selectElement.disabled = false;
-        }
-
-
-        // Trigger change if a value was pre-selected AND successfully selected
-        if (valueFoundAndSelected) {
-            console.log(`Triggering change for ${selectElement.id} due to pre-selection of ${selectedValue}`);
-            // Dispatching event needs to be done carefully to avoid race conditions if the browser isn't ready
-            // setTimeout(() => selectElement.dispatchEvent(new Event('change', { bubbles: true })), 0);
-             selectElement.dispatchEvent(new Event('change', { bubbles: true }));
-        } else if (selectedValue) {
-            console.warn(`Tried to pre-select ${selectedValue} for ${selectElement.id}, but it was not found. Current value: ${selectElement.value}`);
-        }
-    }
-
-    function fetchPrograms(departmentId, programCodeToSelect = null) {
-        console.log(`FETCH PROGRAMS: Called with departmentId = ${departmentId}, programCodeToSelect = ${programCodeToSelect}`);
-        clearSelect(programSelect, '-- Loading Programs --');
-        clearSelect(classSelect, '-- Select Program First --');
-
-        if (!departmentId) {
-            clearSelect(programSelect, '-- Select Department First --', false); // Keep enabled
-            return;
-        }
-
-        const url = `{{ url('superadmin/api/departments') }}/${departmentId}/programs`;
-        console.log(`FETCH PROGRAMS: Fetching from URL: ${url}`);
-
-        fetch(url)
-            .then(response => {
-                console.log('FETCH PROGRAMS: Received response object:', response);
-                if (!response.ok) {
-                    console.error(`FETCH PROGRAMS: Network response not OK. Status: ${response.status} ${response.statusText}`);
-                    clearSelect(programSelect, '-- Error Loading Programs --', false); // Keep enabled
-                    throw new Error(`Network response for programs was not ok (${response.status})`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('FETCH PROGRAMS: Data received for programs:', data);
-                populateSelect(programSelect, data, 'code', 'name', programCodeToSelect);
-            })
-            .catch(error => {
-                console.error('FETCH PROGRAMS: Catch block error:', error);
-                clearSelect(programSelect, '-- Error Loading Programs --', false); // Keep enabled
-            });
-    }
-
-    function fetchClasses(programCode, classCodeToSelect = null) {
-        console.log(`FETCH CLASSES: Called with programCode = ${programCode}, classCodeToSelect = ${classCodeToSelect}`);
-        clearSelect(classSelect, '-- Loading Classes --');
-
-        if (!programCode) {
-            clearSelect(classSelect, '-- Select Program First --', false); // Keep enabled
-            return;
-        }
-
-        const url = `{{ url('superadmin/api/programs') }}/${programCode}/classes`;
-        console.log(`FETCH CLASSES: Fetching from URL: ${url}`);
-
-        fetch(url)
-            .then(response => {
-                console.log('FETCH CLASSES: Received response object:', response);
-                if (!response.ok) {
-                    console.error(`FETCH CLASSES: Network response not OK. Status: ${response.status} ${response.statusText}`);
-                    clearSelect(classSelect, '-- Error Loading Classes --', false); // Keep enabled
-                    throw new Error(`Network response for classes was not ok (${response.status})`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('FETCH CLASSES: Data received for classes:', data);
-                populateSelect(classSelect, data, 'code', 'name', classCodeToSelect);
-            })
-            .catch(error => {
-                console.error('FETCH CLASSES: Catch block error:', error);
-                clearSelect(classSelect, '-- Error Loading Classes --', false); // Keep enabled
-            });
-    }
-
-    function handleRoleChange() {
-        console.log('HANDLE ROLE CHANGE: Role changed to', roleSelect.value);
+    function toggleStudentFields() {
         const isStudent = roleSelect.value === 'student';
+        const isHod = roleSelect.value === 'hod';
         studentFieldsDiv.style.display = isStudent ? 'block' : 'none';
 
-        departmentSelect.required = isStudent;
-        programSelect.required = isStudent;
-        classSelect.required = isStudent;
+        // Make department required for student and HOD
+        if (isStudent || isHod) {
+            departmentRequiredStar.style.display = 'inline';
+            // departmentSelect.setAttribute('required', 'required'); // Validation handled by FormRequest
+        } else {
+            departmentRequiredStar.style.display = 'none';
+            // departmentSelect.removeAttribute('required');
+        }
 
         if (isStudent) {
-            if (departmentSelect.value) { // If department is already selected (e.g. old input or user action)
-                console.log('HANDLE ROLE CHANGE: Role is student and department has value. Fetching programs.');
-                fetchPrograms(departmentSelect.value, oldProgramCode);
+            // programSelect.setAttribute('required', 'required');
+            // classSelect.setAttribute('required', 'required'); // If class is text input
+            // Or class_idSelect.setAttribute('required', 'required'); if class is select
+            if (departmentSelect.value) {
+                fetchPrograms(departmentSelect.value, oldProgramId); // Pass old program_id for pre-selection
             } else {
-                console.log('HANDLE ROLE CHANGE: Role is student but no department selected. Clearing dropdowns.');
-                clearSelect(programSelect, '-- Select Department First --');
-                clearSelect(classSelect, '-- Select Program First --');
+                clearProgramSelect();
+                clearClassSelect(); // Or class_id select
             }
         } else {
-            clearSelect(programSelect);
-            clearSelect(classSelect);
-            // departmentSelect.removeAttribute('required'); // Decide if department is always required or only for students
-            programSelect.removeAttribute('required');
-            classSelect.removeAttribute('required');
+            clearProgramSelect(true); // Disable if not student
+            clearClassSelect(true);   // Disable if not student
+            // programSelect.removeAttribute('required');
+            // classSelect.removeAttribute('required');
         }
     }
 
-    function handleDepartmentChange() {
-        console.log('HANDLE DEPARTMENT CHANGE: Department changed to', departmentSelect.value);
-        if (roleSelect.value === 'student') {
-            // When department changes, we always want to fetch programs.
-            // If this change is due to old('department_id') being set, oldProgramCode will be used.
-            // If it's a manual change, oldProgramCode will likely be empty or irrelevant for the NEW department.
-            // So we pass oldProgramCode here. If the new department doesn't have this program, it won't be selected.
-            fetchPrograms(this.value, oldProgramCode);
+    function clearProgramSelect(disabled = false) {
+        programSelect.innerHTML = '<option value="">-- Select Department First --</option>';
+        programSelect.disabled = disabled;
+    }
+    function clearClassSelect(disabled = false) { // Assuming class is text or you have a class_id select
+        // If class is text: classSelect.value = ''; classSelect.disabled = disabled;
+        // If class is select: classSelect.innerHTML = '<option value="">-- Select Program First --</option>'; classSelect.disabled = disabled;
+        if (classSelect.tagName === 'SELECT') {
+            classSelect.innerHTML = '<option value="">-- Select Program First --</option>';
         } else {
-            clearSelect(programSelect);
-            clearSelect(classSelect);
+            classSelect.value = '';
         }
+        classSelect.disabled = disabled;
     }
 
-    programSelect.addEventListener('change', function() {
-        console.log('PROGRAM SELECT CHANGE: Program changed to', this.value);
+    function fetchPrograms(departmentId, programIdToSelect = null) {
+        if (!departmentId) {
+            clearProgramSelect(roleSelect.value !== 'student');
+            clearClassSelect(roleSelect.value !== 'student');
+            return;
+        }
+        programSelect.innerHTML = '<option value="">-- Loading Programs... --</option>';
+        programSelect.disabled = true;
+        clearClassSelect(roleSelect.value !== 'student');
+
+        // IMPORTANT: Ensure this route name matches your web.php inside superadmin.api group
+        const url = `{{ route('superadmin.api.departments.programs', ['department' => ':departmentId']) }}`.replace(':departmentId', departmentId);
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok for programs.');
+                return response.json();
+            })
+            .then(programs => {
+                programSelect.innerHTML = '<option value="">-- Select Program --</option>';
+                if (programs.length > 0) {
+                    programs.forEach(program => {
+                        const option = document.createElement('option');
+                        option.value = program.id; // Use program ID as value
+                        option.textContent = `${program.name} (${program.code})`;
+                        if (programIdToSelect && program.id == programIdToSelect) {
+                            option.selected = true;
+                        }
+                        programSelect.appendChild(option);
+                    });
+                    programSelect.disabled = false;
+                    // If a program was pre-selected, trigger change to potentially load classes
+                    if (programIdToSelect && programSelect.value == programIdToSelect) {
+                        // programSelect.dispatchEvent(new Event('change')); // If classes depend on program
+                    }
+                } else {
+                    programSelect.innerHTML = '<option value="">-- No Programs Available --</option>';
+                    programSelect.disabled = true;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching programs:', error);
+                programSelect.innerHTML = '<option value="">-- Error Loading --</option>';
+                programSelect.disabled = true;
+            });
+    }
+
+    // Placeholder for fetchClasses if you make 'class' a dependent dropdown later
+    // function fetchClasses(programId, classIdToSelect = null) { ... }
+
+    roleSelect.addEventListener('change', toggleStudentFields);
+    departmentSelect.addEventListener('change', function() {
         if (roleSelect.value === 'student') {
-            // When program is changed by user, we pass the oldClassCode only if the selected program
-            // matches the oldProgramCode. Otherwise, we are selecting a NEW program, so no old class applies.
-            const classToSelect = (this.value === oldProgramCode) ? oldClassCode : null;
-            fetchClasses(this.value, classToSelect);
+            fetchPrograms(this.value, (this.value === oldDepartmentId ? oldProgramId : null) ); // Pass oldProgramId only if dept matches oldDept
         } else {
-            clearSelect(classSelect);
+            clearProgramSelect(true);
+            clearClassSelect(true);
         }
     });
 
-    roleSelect.addEventListener('change', handleRoleChange);
-    departmentSelect.addEventListener('change', handleDepartmentChange);
+    // programSelect.addEventListener('change', function() {
+    //     if (roleSelect.value === 'student') {
+    //         fetchClasses(this.value, (this.value === oldProgramId ? oldClassId : null) ); // If class becomes dependent
+    //     } else {
+    //         clearClassSelect(true);
+    //     }
+    // });
 
     // Initial setup on page load
-    console.log('SCRIPT END: Initializing fields on page load.');
-    // Trigger role change handler first. This will show/hide student fields.
-    // If student fields become visible, it will then check department and potentially fetch programs.
-    handleRoleChange();
-
-    // If department_id was set by old() and role is student, ensure programs are fetched for it.
-    // The handleRoleChange might already do this if departmentSelect.value is populated by `old()`.
-    // This is a bit of a safeguard for initial load with old data.
-    if (roleSelect.value === 'student' && oldDepartmentId && departmentSelect.value === oldDepartmentId) {
-        // If fetchPrograms was already called by handleRoleChange with oldProgramCode, this might be redundant
-        // or could cause a quick double fetch. The logic within fetchPrograms and populateSelect
-        // aims to handle pre-selection correctly.
-        // Let's ensure program dropdown has a chance to get populated if it wasn't already.
-        if (programSelect.options.length <= 1 && departmentSelect.value) { // If only default option exists
-            console.log('Initial Load: Role is student, oldDepartmentId exists. Re-checking programs fetch.');
-            fetchPrograms(departmentSelect.value, oldProgramCode);
-        }
-    }
+    toggleStudentFields(); // This will call fetchPrograms if role is student and department is pre-selected by old()
 });
 </script>
 @endpush

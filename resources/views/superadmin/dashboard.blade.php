@@ -143,6 +143,23 @@
           </div>
         </div>
 
+        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-4">
+          <div class="card shadow-sm dashboard-card">
+            {{-- You can use a different pattern class or image placeholder if you have one for programs --}}
+            <div class="dashboard-card-img-placeholder pattern-blue-stripes"></div> {{-- Example: pattern-blue-stripes --}}
+            <div class="card-body">
+              <div>
+                <h5 class="card-title">
+                  <a href="{{ route('superadmin.programs.index') }}" class="stretched-link" aria-label="Manage Programs">
+                    Manage Programs
+                  </a>
+                </h5>
+                <p class="card-text"></p> {{-- Example card text --}}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {{-- Card 3: Manage Leave Types --}}
         <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-4">
           <div class="card shadow-sm dashboard-card">

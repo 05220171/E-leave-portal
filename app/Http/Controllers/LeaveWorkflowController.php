@@ -10,7 +10,7 @@ use Illuminate\Validation\Rule;
 class LeaveWorkflowController extends Controller
 {
     // Define the roles that can be part of a workflow
-    protected $assignableRoles = ['hod', 'dsa', 'sso'];
+    protected $assignableRoles = ['hod', 'dsa', 'sso', 'president', 'daa', 'dril','councilor'];
     // Define the possible action types for a step
     protected $actionTypes = ['approval', 'record_keeping'];
 

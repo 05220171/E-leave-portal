@@ -15,6 +15,7 @@ use App\Http\Controllers\PresidentController;
 use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\LeaveWorkflowController;
 use App\Http\Controllers\DependentDropdownController; // Create this controller
+use App\Http\Controllers\ProgramController;
 
 /*
 |--------------------------------------------------------------------------
@@ -70,6 +71,9 @@ Route::middleware([
             Route::get('/users/students', [SuperAdminController::class, 'manageStudents'])->name('users.students');
             Route::get('/users/staff', [SuperAdminController::class, 'manageStaffs'])->name('users.staff');
             // End User Management
+
+            // --- PROGRAM MANAGEMENT ROUTES ---
+            Route::resource('programs', ProgramController::class);
 
             Route::resource('departments', DepartmentController::class); // Assuming this is for superadmin
             Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
@@ -177,7 +181,7 @@ Route::middleware([
          ->name('sso.')
          ->group(function () {
         Route::get('/dashboard', [SSOController::class, 'dashboard'])->name('dashboard');
-        Route::post('/leaves/{leave}/mark-recorded', [SSOController::class, 'markAsRecorded'])->name('leaves.mark-recorded');
+        //Route::post('/leaves/{leave}/mark-recorded', [SSOController::class, 'markAsRecorded'])->name('leaves.mark-recorded');
         });
 });
 

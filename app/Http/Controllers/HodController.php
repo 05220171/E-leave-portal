@@ -216,25 +216,45 @@ class HodController extends Controller
         return view('hod.student-history', compact('leavesHistory'));
     }
 
-    public function approvedRecords()
+    public function approvedRecords(Request $request) // <<< ADD Request $request
     {
         $hodUser = Auth::user();
         if (!$hodUser || $hodUser->role !== 'hod' || !$hodUser->department_id) {
-            return redirect()->route('home') // Or appropriate redirect
-                             ->with('error', 'Unable to determine your department.');
+            return redirect()->route('home')
+                             ->with('error', 'Unable to determine your department or not authorized.');
         }
-        // Fetch leaves that this HOD has an approval record for, from their department
-        $approvedLeaves = Leave::with(['student.department', 'type', 'approvalActions.user'])
-            ->whereHas('approvalActions', function($query) use ($hodUser) {
-                $query->where('user_id', $hodUser->id)
-                      ->where('acted_as_role', 'hod')
-                      ->where('action_taken', 'approved');
-            })
-            ->whereHas('student', function ($query) use ($hodUser) {
-                $query->where('department_id', $hodUser->department_id);
-            })
-            ->orderBy('updated_at', 'desc') // Order by when they were last updated (likely approved)
-            ->paginate(15);
+
+        $searchTerm = $request->input('search');
+
+        // Find leave_ids where this HOD took an 'approved' action
+        $approvedLeaveIdsByThisHod = LeaveRequestApproval::where('user_id', $hodUser->id)
+            ->where('acted_as_role', 'hod')
+            ->where('action_taken', 'approved')
+            ->pluck('leave_id')
+            ->unique();
+
+        // Base query for fetching approved leaves by this HOD from their department
+        $query = Leave::with(['student', 'type', 'approvalActions.user']) // student.department is implicitly filtered by the whereHas below
+            ->whereIn('id', $approvedLeaveIdsByThisHod)
+            ->whereHas('student', function ($q_student) use ($hodUser) {
+                $q_student->where('department_id', $hodUser->department_id);
+            });
+
+        if ($searchTerm) {
+            $query->where(function ($q_search) use ($searchTerm) {
+                $q_search->whereHas('student', function ($studentQuery) use ($searchTerm) {
+                    $studentQuery->where('name', 'LIKE', "%{$searchTerm}%");
+                })
+                ->orWhereHas('type', function ($typeQuery) use ($searchTerm) {
+                    $typeQuery->where('name', 'LIKE', "%{$searchTerm}%");
+                })
+                ->orWhere('reason', 'LIKE', "%{$searchTerm}%"); // Optional: search by reason
+            });
+        }
+
+        $approvedLeaves = $query->orderBy('updated_at', 'desc')
+                                ->paginate(15)
+                                ->withQueryString(); // Appends search query to pagination links
 
         return view('hod.approved-records', compact('approvedLeaves', 'hodUser'));
     }

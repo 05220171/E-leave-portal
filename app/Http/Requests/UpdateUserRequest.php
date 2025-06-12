@@ -2,106 +2,99 @@
 
 namespace App\Http\Requests;
 
-use App\Models\User; // Make sure you have this use statement for User model
+use App\Models\User;
+use App\Models\Program; // Keep for now
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule; // For Rule::in, Rule::unique, etc.
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class UpdateUserRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
-    public function authorize()
+    public function authorize(): bool
     {
-        // Typically, you'd check if the authenticated user has permission
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array
-     */
-    public function rules()
+    public function rules(): array
     {
-        $user = $this->route('user'); // Get the user model instance being updated
+        $userToUpdate = $this->route('user'); // Get the User model instance being updated
 
         $rules = [
             'name' => 'required|string|max:255',
-            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)], // Ignore current user's email
-            'role' => ['required', 'string', Rule::in(['admin', 'student', 'hod', 'dsa', 'sso', 'superadmin'])],
-            'department_id' => 'required|exists:departments,id',
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($userToUpdate->id) // Ignore current user
+            ],
+            'password' => 'nullable|string|min:8|confirmed', // Password is optional on update
+            'role' => ['required', 'string', Rule::in(['admin', 'student', 'hod', 'dsa', 'sso', 'superadmin', 'daa', 'president'])],
+            'department_id' => 'nullable|integer|exists:departments,id',
         ];
 
-        // Password is optional on update
-        if ($this->filled('password')) {
-            $rules['password'] = 'sometimes|string|min:8|confirmed';
+        if ($this->input('role') === 'student' || $this->input('role') === 'hod') {
+            $rules['department_id'] = 'required|integer|exists:departments,id';
         }
 
-        // Add rules specific to 'student' role
         if ($this->input('role') === 'student') {
-            $rules['program'] = 'required|string|max:255';
-            $rules['class'] = 'required|string|max:255'; // Assuming 'class' is the field name
+            $rules['program_id'] = [
+                'required',
+                'integer',
+                Rule::exists('programs', 'id')->where(function ($query) {
+                    $query->where('department_id', $this->input('department_id'));
+                }),
+            ];
+            $rules['class'] = 'required|string|max:255';
+        } else {
+            $rules['program_id'] = 'nullable|integer|exists:programs,id';
+            $rules['class'] = 'nullable|string|max:255';
         }
 
         return $rules;
     }
 
-    /**
-     * Configure the validator instance.
-     *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
-     */
-    public function withValidator($validator)
+    public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $user = $this->route('user'); // Get the user model instance being updated
+            $userToUpdate = $this->route('user');
             $role = $this->input('role');
             $departmentId = $this->input('department_id');
 
-            // 1. Validation: One HOD per department_id
             if ($role === 'hod') {
                 if (empty($departmentId)) {
                     $validator->errors()->add('department_id', 'A department must be selected for an HOD.');
                 } else {
                     $existingHod = User::where('role', 'hod')
                                        ->where('department_id', $departmentId)
-                                       ->where('id', '!=', $user->id) // Exclude the current user being edited
-                                       ->first();
+                                       ->where('id', '!=', $userToUpdate->id) // Exclude current user
+                                       ->exists();
                     if ($existingHod) {
-                        $validator->errors()->add('role', 'Another user is already the HOD for the selected department. Please choose a different department or role.');
+                        $validator->errors()->add('role', 'Another user is already the HOD for this department.');
                     }
                 }
             }
 
-            // 2. Validation: Only one DSA in the entire system
-            if ($role === 'dsa') {
-                $existingDsa = User::where('role', 'dsa')
-                                   ->where('id', '!=', $user->id) // Exclude the current user being edited
-                                   ->first();
-                if ($existingDsa) {
-                    $validator->errors()->add('role', 'Another user is already the DSA. Only one DSA is permitted.');
+            $singularSystemRoles = ['dsa', 'president', 'sso', 'daa'];
+            if (in_array($role, $singularSystemRoles)) {
+                $existingSingularRoleUser = User::where('role', $role)
+                                             ->where('id', '!=', $userToUpdate->id) // Exclude current user
+                                             ->exists();
+                if ($existingSingularRoleUser) {
+                    $validator->errors()->add('role', 'Another user already holds the role ' . Str::upper($role) . '. This role must be unique.');
                 }
             }
         });
     }
 
-    /**
-     * Get custom messages for validator errors.
-     *
-     * @return array
-     */
-    public function messages()
+    public function messages(): array
     {
         return [
-            'department_id.required' => 'The department field is required.',
+            'department_id.required' => 'The department field is required when role is Student or HOD.',
             'department_id.exists' => 'The selected department is invalid.',
-            'program.required' => 'The program field is required for students.',
+            'program_id.required' => 'The program field is required for students.',
+            'program_id.exists' => 'The selected program is invalid or does not belong to the chosen department.',
             'class.required' => 'The class field is required for students.',
-            // Add other custom messages as needed
         ];
     }
 }

@@ -50,6 +50,11 @@
         <li class="{{ request()->routeIs('superadmin.departments.*') ? 'active' : '' }}">
             <a href="{{ route('superadmin.departments.index') }}"><i class="fas fa-building"></i> Manage Departments</a>
         </li>
+
+        <li class="{{ request()->routeIs('superadmin.programs.*') ? 'active' : '' }}">
+            <a href="{{ route('superadmin.programs.index') }}"><i class="fas fa-graduation-cap"></i> Manage Programs</a>
+        </li>
+        
         <li class="{{ request()->routeIs('superadmin.leave-types.*') || request()->routeIs('superadmin.leave-types.workflows.*') ? 'active' : '' }}">
             <a href="{{ route('superadmin.leave-types.index') }}"><i class="fas fa-list-alt"></i> Manage Leave Types</a>
         </li>

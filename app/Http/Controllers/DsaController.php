@@ -212,17 +212,47 @@ class DsaController extends Controller
     }
 
     // ... approvedRecords() method (should be present from previous step) ...
-    public function approvedRecords()
+    public function approvedRecords(Request $request) // <<< Add Request $request
     {
         $dsaUser = Auth::user();
-        $approvedLeaveIdsByDsa = LeaveRequestApproval::where('user_id', $dsaUser->id)
+        // No department check needed for DSA if they see all records they approved
+
+        $searchTerm = $request->input('search');
+
+        // Find leave_ids where this DSA took an 'approved' action
+        $approvedLeaveIdsByThisDsa = LeaveRequestApproval::where('user_id', $dsaUser->id)
             ->where('acted_as_role', 'dsa')
             ->where('action_taken', 'approved')
-            ->pluck('leave_id')->unique();
-        $approvedLeaves = Leave::with(['student.department', 'type', 'approvalActions.user'])
-            ->whereIn('id', $approvedLeaveIdsByDsa)
-            ->orderBy('updated_at', 'desc')
-            ->paginate(15);
+            ->pluck('leave_id')
+            ->unique();
+
+        // Base query for fetching approved leaves by this DSA
+        $query = Leave::with(['student.department', 'student.program', 'type', 'approvalActions.user'])
+            ->whereIn('id', $approvedLeaveIdsByThisDsa);
+
+        if ($searchTerm) {
+            $query->where(function ($q_search) use ($searchTerm) {
+                $q_search->whereHas('student', function ($studentQuery) use ($searchTerm) {
+                    $studentQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                                 ->orWhereHas('department', function ($deptQuery) use ($searchTerm) {
+                                     $deptQuery->where('name', 'LIKE', "%{$searchTerm}%");
+                                 })
+                                 ->orWhereHas('program', function ($progQuery) use ($searchTerm) {
+                                     $progQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                                               ->orWhere('code', 'LIKE', "%{$searchTerm}%");
+                                 });
+                })
+                ->orWhereHas('type', function ($typeQuery) use ($searchTerm) {
+                    $typeQuery->where('name', 'LIKE', "%{$searchTerm}%");
+                })
+                ->orWhere('reason', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+
+        $approvedLeaves = $query->orderBy('updated_at', 'desc')
+                                ->paginate(15)
+                                ->withQueryString(); // Appends search query to pagination links
+
         return view('dsa.approved-records', compact('approvedLeaves', 'dsaUser'));
     }
 }

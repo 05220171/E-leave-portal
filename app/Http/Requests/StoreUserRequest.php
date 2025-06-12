@@ -3,80 +3,65 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
-use App\Models\Program;
+use App\Models\Program; // Keep this for now, though direct use might be removed
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use App\Rules\ValidJnecUserEmail; // <-- 1. IMPORT YOUR CUSTOM RULE
+use App\Rules\ValidJnecUserEmail;
+use Illuminate\Support\Str; // For Str::upper
 
 class StoreUserRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return true; // Assuming superadmin can always create users
+        return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
     public function rules(): array
     {
         $rules = [
             'name' => 'required|string|max:255',
-            
-            // 2. MODIFIED THIS SECTION TO INCLUDE YOUR CUSTOM RULE
             'email' => [
                 'required',
+                'string', // Ensure it's a string
                 'email',
-                'unique:users,email',
-                new ValidJnecUserEmail, // <-- Your custom rule is now active here
+                'max:255', // Max length for email
+                Rule::unique('users', 'email'), // Using Rule::unique for clarity
+                new ValidJnecUserEmail,
             ],
-
             'password' => 'required|string|min:8|confirmed',
-            'role' => ['required', 'string', Rule::in(['admin', 'student', 'hod', 'dsa', 'sso', 'superadmin'])],
-            'department_id' => 'required|integer|exists:departments,id',
+            'role' => ['required', 'string', Rule::in(['admin', 'student', 'hod', 'dsa', 'sso', 'superadmin', 'daa', 'president'])],
+            // department_id is nullable by default, made required conditionally below
+            'department_id' => 'nullable|integer|exists:departments,id',
         ];
 
-        // This part remains unchanged
+        // Conditional requirement for department_id
+        if ($this->input('role') === 'student' || $this->input('role') === 'hod') {
+            $rules['department_id'] = 'required|integer|exists:departments,id';
+        }
+
+        // Conditional requirement for student fields
         if ($this->input('role') === 'student') {
-            $rules['program'] = [
+            // Program is now program_id and selected from a dropdown based on department
+            $rules['program_id'] = [
                 'required',
-                'string',
-                Rule::exists('programs', 'code')->where(function ($query) {
+                'integer',
+                Rule::exists('programs', 'id')->where(function ($query) {
+                    // Ensure the selected program_id actually belongs to the selected department_id
                     $query->where('department_id', $this->input('department_id'));
                 }),
             ];
-
-            $rules['class'] = [
-                'required',
-                'string',
-                Rule::exists('student_classes', 'code')->where(function ($query) {
-                    $programCode = $this->input('program');
-                    if ($programCode) {
-                        $program = Program::where('code', $programCode)
-                                          ->where('department_id', $this->input('department_id'))
-                                          ->first();
-                        if ($program) {
-                            $query->where('program_id', $program->id);
-                        } else {
-                            $query->whereRaw('1 = 0');
-                        }
-                    } else {
-                        $query->whereRaw('1 = 0');
-                    }
-                }),
-            ];
+            // Assuming 'class' is still a string. If it becomes a dropdown from a 'student_classes' table:
+            // $rules['class_id'] = ['required', 'integer', Rule::exists('student_classes', 'id')->where(...)];
+            $rules['class'] = 'required|string|max:255';
+        } else {
+            // For non-students, program_id and class should be nullable or not present
+            $rules['program_id'] = 'nullable|integer|exists:programs,id';
+            $rules['class'] = 'nullable|string|max:255';
         }
 
         return $rules;
     }
 
-    /**
-     * Configure the validator instance.
-     * This part remains unchanged
-     */
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
@@ -84,40 +69,38 @@ class StoreUserRequest extends FormRequest
             $departmentId = $this->input('department_id');
 
             if ($role === 'hod') {
-                if (empty($departmentId)) {
+                if (empty($departmentId)) { // This should ideally be caught by the 'required' rule above
                     $validator->errors()->add('department_id', 'A department must be selected for an HOD.');
                 } else {
                     $existingHod = User::where('role', 'hod')
                                        ->where('department_id', $departmentId)
-                                       ->first();
+                                       ->exists(); // More efficient
                     if ($existingHod) {
-                        $validator->errors()->add('role', 'An HOD already exists for the selected department. Please choose a different department or role.');
+                        $validator->errors()->add('role', 'An HOD already exists for the selected department.');
                     }
                 }
             }
 
-            if ($role === 'dsa') {
-                $existingDsa = User::where('role', 'dsa')->first();
-                if ($existingDsa) {
-                    $validator->errors()->add('role', 'A DSA already exists in the system. Only one DSA is permitted.');
+            // Consolidate singular role check
+            $singularSystemRoles = ['dsa', 'president', 'sso', 'daa']; // Add 'admin', 'superadmin' if they are also strictly singular
+            if (in_array($role, $singularSystemRoles)) {
+                $existingSingularRoleUser = User::where('role', $role)->exists();
+                if ($existingSingularRoleUser) {
+                    $validator->errors()->add('role', 'A user with the role ' . Str::upper($role) . ' already exists. This role must be unique.');
                 }
             }
         });
     }
 
-    /**
-     * Get custom messages for validator errors.
-     * This part remains unchanged
-     */
     public function messages(): array
     {
         return [
-            'department_id.required' => 'The department field is required.',
+            'department_id.required' => 'The department field is required when role is Student or HOD.',
             'department_id.exists' => 'The selected department is invalid.',
-            'program.required' => 'The program field is required for students.',
-            'program.exists' => 'The selected program is invalid or does not belong to the chosen department.',
+            'program_id.required' => 'The program field is required for students.', // Changed from program.required
+            'program_id.exists' => 'The selected program is invalid or does not belong to the chosen department.', // Changed from program.exists
             'class.required' => 'The class field is required for students.',
-            'class.exists' => 'The selected class is invalid or does not belong to the chosen program.',
+            // 'class.exists' => 'The selected class is invalid or does not belong to the chosen program.', // Only if class becomes an ID
         ];
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Department;
+use App\Models\Program;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Facades\Excel;
@@ -22,37 +23,66 @@ class SuperAdminController extends Controller
     {
         $userCount = User::count();
         $departmentCount = Department::count();
-        return view('superadmin.dashboard', compact('userCount', 'departmentCount'));
+        // Add Program count if desired
+        $programCount = Program::count();
+        return view('superadmin.dashboard', compact('userCount', 'departmentCount', 'programCount'));
     }
 
     public function index()
     {
-        $users = User::with('department')->latest()->paginate(15);
+        // Eager load program relationship if you want to display program name
+        $users = User::with(['department', 'program'])->latest()->paginate(15);
         return view('superadmin.users.index', compact('users'));
     }
 
-    /**
-     * Display a listing of all students.
-     */
-    public function manageStudents()
+    public function manageStudents(Request $request) // <<< ADD Request $request
     {
-        $students = User::where('role', 'student')
-                        ->with('department') // Eager load department
-                        ->latest()
-                        ->paginate(15);
+        $searchTerm = $request->input('search');
+
+        $query = User::where('role', 'student')
+                        ->with(['department', 'program']); // Eager load relationships
+
+        if ($searchTerm) {
+            $query->where(function ($q_search) use ($searchTerm) {
+                $q_search->where('name', 'LIKE', "%{$searchTerm}%")
+                         ->orWhere('email', 'LIKE', "%{$searchTerm}%")
+                         ->orWhereHas('department', function ($deptQuery) use ($searchTerm) {
+                             $deptQuery->where('name', 'LIKE', "%{$searchTerm}%");
+                         })
+                         ->orWhereHas('program', function ($progQuery) use ($searchTerm) {
+                             // Assuming program name or code is what you'd search by
+                             $progQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                                       ->orWhere('code', 'LIKE', "%{$searchTerm}%");
+                         })
+                         ->orWhere('class', 'LIKE', "%{$searchTerm}%"); // Assuming 'class' is the class/year string
+            });
+        }
+
+        $students = $query->latest()->paginate(15)->withQueryString();
+
         return view('superadmin.users.students', compact('students'));
     }
 
-    /**
-     * Display a listing of all staff members (hod, dsa, sso, admin).
-     */
-    public function manageStaffs()
+    public function manageStaffs(Request $request) // Potentially add search here too
     {
-        $staffRoles = ['hod', 'dsa', 'sso', 'admin']; // Define staff roles
-        $staffs = User::whereIn('role', $staffRoles)
-                      ->with('department') // Eager load department
-                      ->latest()
-                      ->paginate(15);
+        $staffRoles = ['hod', 'dsa', 'sso', 'admin', 'superadmin']; // Include all non-student staff
+        $searchTerm = $request->input('search');
+    
+        $query = User::whereIn('role', $staffRoles)
+                      ->with(['department', 'program']); // Staff might also have programs if relevant
+    
+        if ($searchTerm) {
+            $query->where(function ($q_search) use ($searchTerm) {
+                $q_search->where('name', 'LIKE', "%{$searchTerm}%")
+                         ->orWhere('email', 'LIKE', "%{$searchTerm}%")
+                         ->orWhere('role', 'LIKE', "%{$searchTerm}%") // Search by role string
+                         ->orWhereHas('department', function ($deptQuery) use ($searchTerm) {
+                             $deptQuery->where('name', 'LIKE', "%{$searchTerm}%");
+                         });
+            });
+        }
+    
+        $staffs = $query->latest()->paginate(15)->withQueryString();
         return view('superadmin.users.staff', compact('staffs'));
     }
 
@@ -62,19 +92,19 @@ class SuperAdminController extends Controller
         return view('superadmin.create-user', compact('departments'));
     }
 
-    public function store(StoreUserRequest $request)
+    public function store(StoreUserRequest $request) // Uses StoreUserRequest for validation
     {
-        $validated = $request->validated();
+        $validated = $request->validated(); // Get validated data
 
         User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
-            'department_id' => $validated['department_id'],
-            'program' => $validated['role'] === 'student' ? $validated['program'] : null,
-            'class' => $validated['role'] === 'student' ? $validated['class'] : null,
-            'email_verified_at' => now(),
+            'department_id' => $validated['department_id'] ?? null, // department_id is now conditional in FormRequest
+            'program_id'    => ($validated['role'] === 'student' && isset($validated['program_id'])) ? $validated['program_id'] : null, // NEW: use program_id
+            'class'         => ($validated['role'] === 'student' && isset($validated['class'])) ? $validated['class'] : null, // Assuming class is still a string for now
+            'email_verified_at' => now(), // Good to set this
         ]);
 
         return redirect()->route('superadmin.users.index')->with('success', 'User created successfully.');
@@ -84,13 +114,13 @@ class SuperAdminController extends Controller
     {
         $departments = Department::all();
         // These role lists might be useful if you build a more dynamic role assignment in edit form
-        $assignableSystemRoles = ['dsa', 'sso', 'daa', 'president', 'admin', 'superadmin'];
+        $assignableSystemRoles = ['dsa', 'sso', 'admin', 'superadmin'];
         $departmentSpecificRoles = ['hod', 'student'];
 
         return view('superadmin.edit-user', compact('user', 'departments', 'assignableSystemRoles', 'departmentSpecificRoles'));
     }
 
-    public function update(UpdateUserRequest $request, User $user)
+    public function update(UpdateUserRequest $request, User $user) // Uses UpdateUserRequest
     {
         $validated = $request->validated();
 
@@ -98,12 +128,12 @@ class SuperAdminController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role' => $validated['role'],
-            'department_id' => $validated['department_id'],
-            'program' => $validated['role'] === 'student' ? $validated['program'] : null,
-            'class' => $validated['role'] === 'student' ? $validated['class'] : null,
+            'department_id' => $validated['department_id'] ?? null,
+            'program_id'    => ($validated['role'] === 'student' && isset($validated['program_id'])) ? $validated['program_id'] : null, // NEW
+            'class'         => ($validated['role'] === 'student' && isset($validated['class'])) ? $validated['class'] : null,
         ];
 
-        if (isset($validated['password']) && !empty($validated['password'])) { // Check if password is provided and not empty
+        if ($request->filled('password') && !empty($validated['password'])) {
             $userData['password'] = Hash::make($validated['password']);
         }
 
@@ -207,4 +237,5 @@ class SuperAdminController extends Controller
         }
         return $errorMessages;
     }
+    
 }

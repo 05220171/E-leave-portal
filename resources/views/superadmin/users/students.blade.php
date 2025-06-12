@@ -4,52 +4,18 @@
 
 @section('css')
 <style>
+    /* Main Page Title */
     .page-section-title { font-size: 1.75rem; font-weight: 600; color: #2c3e50; }
-    
-    /* ==================== MODIFIED CSS BLOCK START ==================== */
-    /* Base style for action buttons */
-    .action-btn-exact {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 5px 10px;
-        border-radius: 4px;
-        font-size: 0.85rem;
-        line-height: 1;
-        font-weight: 500;
-        cursor: pointer;
-        text-decoration: none;
-        vertical-align: middle;
-        margin: 0;
-        transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
-        border: 1px solid transparent;
-        color: #fff;
-    }
-
-    /* Edit Button - Blue */
-    a.action-btn-exact.edit-exact {
-        background-color: #3498db;
-        border-color: #3498db;
-    }
-    a.action-btn-exact.edit-exact:hover {
-        background-color: #2980b9;
-        border-color: #217dbb;
-    }
-
-    /* Delete Button - Red */
-    button.action-btn-exact.delete-exact {
-        background-color: #e74c3c;
-        border-color: #e74c3c;
-    }
-    button.action-btn-exact.delete-exact:hover {
-        background-color: #c0392b;
-        border-color: #b33426;
-    }
-    /* ===================== MODIFIED CSS BLOCK END ===================== */
-
+    /* Action Buttons */
+    .action-btn-exact { display: inline-flex; align-items: center; justify-content: center; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; line-height: 1; font-weight: 500; cursor: pointer; text-decoration: none; vertical-align: middle; margin: 0; transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out; border: 1px solid transparent; color: #fff; }
+    .action-btn-exact i { margin-right: 0.35rem; }
+    a.action-btn-exact.edit-exact { background-color: #3498db; border-color: #3498db; }
+    a.action-btn-exact.edit-exact:hover { background-color: #2980b9; border-color: #217dbb; }
+    button.action-btn-exact.delete-exact { background-color: #e74c3c; border-color: #e74c3c; }
+    button.action-btn-exact.delete-exact:hover { background-color: #c0392b; border-color: #b33426; }
+    /* Table and general styles from your provided CSS */
     .d-inline-block { display: inline-block !important; }
-    .me-1 { margin-right: 0.35rem !important; }
-    .me-2 { margin-right: 0.5rem !important; }
+    .me-1 { margin-right: 0.35rem !important; } /* Ensure this is your desired spacing */
     .custom-alert { position: relative; padding: 0.75rem 1.25rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: 0.25rem; }
     .custom-alert-success { color: #0f5132; background-color: #d1e7dd; border-color: #badbcc; }
     .custom-alert-danger { color: #842029; background-color: #f8d7da; border-color: #f5c2c7; }
@@ -77,6 +43,9 @@
     .pagination-wrapper .page-item.active .page-link { z-index: 3; color: #fff; background-color: #0d6efd; border-color: #0d6efd; }
     .pagination-wrapper .page-item.disabled .page-link { color: #6c757d; pointer-events: none; background-color: #fff; border-color: #dee2e6; }
     .pagination-wrapper .page-link:hover { z-index: 2; color: #0a58ca; background-color: #e9ecef; border-color: #dee2e6; }
+
+    /* Search Bar Specific Styles (if needed, or rely on Bootstrap) */
+    /* The d-flex approach usually needs minimal custom CSS for the search bar itself */
 </style>
 @endsection
 
@@ -85,6 +54,12 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="page-section-title text-start mb-0"><i class="fas fa-user-graduate me-2"></i>Manage Students</h1>
+        {{-- Optional: Add button to create new student --}}
+        <div>
+             <a href="{{ route('superadmin.users.create') }}" class="btn btn-primary btn-sm header-action-btn"> {{-- Assuming header-action-btn exists in global CSS --}}
+                <i class="fas fa-user-plus me-1"></i> Add New User
+            </a>
+        </div>
     </div>
 
     @if(session('success'))
@@ -99,6 +74,27 @@
             <button type="button" class="custom-alert-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
+
+    {{-- SEARCH FORM --}}
+    <form method="GET" action="{{ route('superadmin.users.students') }}" class="mb-4" role="search">
+        <div class="d-flex">
+            <input class="form-control me-2 form-control-lg" type="search" name="search"
+                   placeholder="Search by Name, Email, Dept, Program, Class..."
+                   value="{{ request('search') }}" aria-label="Search Students">
+            <button class="btn btn-outline-primary btn-lg" type="submit" title="Search Students">
+                <i class="fas fa-search me-1"></i>Search
+            </button>
+        </div>
+        @if(request('search'))
+            <div class="mt-2 text-start">
+                <a href="{{ route('superadmin.users.students') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-times-circle me-1"></i>Clear Search
+                </a>
+            </div>
+        @endif
+    </form>
+    {{-- END OF SEARCH FORM --}}
+
 
     <h3 class="mb-3 mt-4" style="font-weight: 600; color: #2980b9;">
         <i class="fas fa-list me-2"></i> Student List
@@ -127,11 +123,17 @@
                         <td>{{ $user->email }}</td>
                         <td>{{ Str::title($user->role) }}</td>
                         <td>{{ $user->department->name ?? 'N/A' }}</td>
-                        <td>{{ $user->program ?? 'N/A' }}</td>
+                        <td>
+                            @if ($user->program)
+                                {{ $user->program->name }}
+                                {{-- <small class="d-block text-muted">({{ $user->program->code }})</small> --}}
+                            @else
+                                N/A
+                            @endif
+                        </td>
                         <td>{{ $user->class ?? 'N/A' }}</td>
                         <td>{{ $user->created_at->format('d M Y, H:i') }}</td>
                         <td class="actions-cell text-center">
-                             {{-- MODIFIED HTML BLOCK --}}
                             <a href="{{ route('superadmin.users.edit', $user->id) }}" class="action-btn-exact edit-exact me-1" title="Edit Student">
                                 <i class="fas fa-edit me-1"></i> Edit
                             </a>
@@ -148,7 +150,11 @@
                     <tr>
                         <td colspan="9" class="text-center py-3">
                              <div class="custom-alert custom-alert-info my-0">
-                                No students found.
+                                @if(request('search'))
+                                    No students found matching your search criteria.
+                                @else
+                                    No students found.
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -163,10 +169,4 @@
         </div>
     @endif
 </div>
-@endsection
-
-@section('js')
-<script>
-    // JS for alert dismissal
-</script>
 @endsection
